@@ -1,0 +1,27 @@
+{
+    "server":{
+        "port":8080,
+        "url":"/",
+        "cache_max_age":10
+    },
+    "experiments":[
+        {
+            "name":"experiment",
+            "enabled":true,
+            "buckets":[
+                {
+                    "name": "bucket 1",
+                    "percent":50
+                },
+                {
+                    "name":"bucket 2",
+                    "percent":35
+                },
+                {
+                    "name":"bucket 3",
+                    "percent":15
+                }
+            ]
+        }
+    ]
+}
