@@ -73,7 +73,8 @@ func (c *Config) IsValidAPIKey(possibleKey string) bool {
 func (c *Config) tidyExperiments() {
 	var enabledOnlyExperiments []Experiment
 	for _, experiment := range c.Experiments {
-		Info("Parsing experiment `%s`...", experiment.Name)
+		Info("parsing experiment `%s`...", experiment.Name)
+
 		if experiment.IsEnabled {
 			experiment.Hash = hash(experiment.Name)
 			c.tidyBucketsFor(experiment)
@@ -91,7 +92,7 @@ func (c *Config) tidyBucketsFor(experiment Experiment) {
 	sort.Sort(experiment.Buckets)
 
 	for i, bucket := range experiment.Buckets {
-		Info("using bucket for experiment `%s`: name: `%s`, percent: %d, data: `%s`",
+		Info("using bucket for experiment `%s`: name=`%s`, percent=%d, data=`%s`",
 			experiment.Name, bucket.Name, bucket.Percent, string(bucket.Data))
 		cumulativePercent += bucket.Percent
 		experiment.Buckets[i].CumulativeProbability = cumulativePercent

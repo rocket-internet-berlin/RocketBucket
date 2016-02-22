@@ -5,8 +5,10 @@ import (
     "fmt"
     "log"
     "time"
+    "syscall"
     "net/http"
     "io/ioutil"
+    "os/signal"
     "rocket_bucket"
 )
 
@@ -50,36 +52,58 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }    
 }
 
-func readConfig() []byte {
+func readConfig() {
     if len(os.Args) == 1 {
         log.Panicln("Usage: bucket_server configuration_file_path")
     }
     
-    configFile := os.Args[1]
-    rocket_bucket.Info("using config file %s", configFile)
+    rocket_bucket.Info("loading config file %s", os.Args[1])
     
-    configData, err := ioutil.ReadFile(configFile)
+    configData, err := ioutil.ReadFile(os.Args[1])
     
     if (err != nil) {
-        log.Panicln(err)
+        rocket_bucket.Fatal("%v", err)
     }
     
-    return configData
+    // prevent invalid config loading
+    defer func() {
+        if r := recover(); r != nil {
+            rocket_bucket.Error("%v", r)
+        }
+    }()
+    
+    newConfig := rocket_bucket.Config{}
+    newConfig.Parse(configData)
+    
+    config = newConfig
+    
+    // doing it like this to remove microseconds from time.Now() (made testing http 304 hard)
+    startupTime, _ = time.Parse(time.RFC1123, time.Now().Format(time.RFC1123) )
+}
+
+func setupSIGHUPHandler() {
+    c := make(chan os.Signal, 1)
+  	signal.Notify(c, syscall.SIGHUP)
+
+  	go func(){
+  		for sig := range c {
+            println(sig)
+            rocket_bucket.Info("received SIGHUP")
+            readConfig()
+  		}
+  	}()
 }
 
 func main() {
-    // doing it this way round to remove microseconds from time.Now() (made testing 304 hard)
-    startupTime, _ = time.Parse(time.RFC1123, time.Now().Format(time.RFC1123) )
+    readConfig()
+    setupSIGHUPHandler()
     
-    config = rocket_bucket.Config{}
-    config.Parse(readConfig())
-
     selector = rocket_bucket.Selector{Experiments: &config.Experiments}
 
     rocket_bucket.Info("listening: url=`%s`, port=`%d`", config.Server.URL, config.Server.Port)
 
     http.HandleFunc(config.Server.URL, handler)    
     
-    http.ListenAndServe(fmt.Sprintf(":%d", config.Server.Port), nil)
+    http.ListenAndServe(fmt.Sprintf(":%d", config.Server.Port), nil)    
 }
 

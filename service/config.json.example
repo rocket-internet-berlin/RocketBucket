@@ -6,7 +6,7 @@
     },
     "experiments":[
         {
-            "name":"experiment",
+            "name":"experiment 1",
             "enabled":true,
             "buckets":[
                 {
