@@ -27,28 +27,28 @@ func TestServerConfig(t *testing.T) {
 	if config.Server.URL != "/blah" {
 		t.Error("url is missing")
 	}
-    
-    if config.IsAPIKeyMandatory() {
-        t.Error("API key marked as mandatory eventhough none are set")
-    }
+
+	if config.IsAPIKeyMandatory() {
+		t.Error("API key marked as mandatory eventhough none are set")
+	}
 }
 
 func TestServerDefaultURL(t *testing.T) {
 	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080}}`))
-    
-    if config.Server.URL != "/" {
-        t.Error("Default url not set")
-    }
+
+	if config.Server.URL != "/" {
+		t.Error("Default url not set")
+	}
 }
 
 func TestServerStripTrailingSlashesFromURL(t *testing.T) {
 	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080, "url":"/blah//"}}`))
-    
-    if strings.HasSuffix(config.Server.URL, "/") {
-        t.Errorf("Trailing slash not stripped from %s", config.Server.URL)
-    }
+
+	if strings.HasSuffix(config.Server.URL, "/") {
+		t.Errorf("Trailing slash not stripped from %s", config.Server.URL)
+	}
 }
 
 func TestServerInvalidURL(t *testing.T) {}
@@ -56,10 +56,10 @@ func TestServerInvalidURL(t *testing.T) {}
 func TestServerCacheMaxAge(t *testing.T) {
 	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080,"cache_max_age":3600}}`))
-    
-    if config.Server.CacheMaxAge != 3600 {
-        t.Error("Cache max age not set")
-    }
+
+	if config.Server.CacheMaxAge != 3600 {
+		t.Error("Cache max age not set")
+	}
 }
 
 func TestServerApiKeys(t *testing.T) {
@@ -73,25 +73,25 @@ func TestServerApiKeys(t *testing.T) {
             ]
         }
     }`))
-    
-    if !config.IsAPIKeyMandatory() {
-        t.Error("API key should be mandatory when set in config")
-    }
-    
-    if !config.IsValidAPIKey("12345678901234567890123456789012") {
-        t.Error("cannot lookup VALID API key")
-    }
-    
-    if config.IsValidAPIKey("hey!") {
-        t.Error("cannot lookup INVALID API key")
-    }
+
+	if !config.IsAPIKeyMandatory() {
+		t.Error("API key should be mandatory when set in config")
+	}
+
+	if !config.IsValidAPIKey("12345678901234567890123456789012") {
+		t.Error("cannot lookup VALID API key")
+	}
+
+	if config.IsValidAPIKey("hey!") {
+		t.Error("cannot lookup INVALID API key")
+	}
 }
 
 func TestShortApiKey(t *testing.T) {
 	assertException(t, "API key `abc` too short", func() {
-        config := Config{}
+		config := Config{}
 
-        config.Parse([]byte(`{
+		config.Parse([]byte(`{
             "server":{
                 "port":8080,
                 "api_keys": [
@@ -99,11 +99,11 @@ func TestShortApiKey(t *testing.T) {
                 ]
             }
         }`))
-    })      
+	})
 }
 
 func TestExceptionOnMissingServerPort(t *testing.T) {
-	assertException(t, `No server port set`, func() {
+	assertException(t, `no server port set`, func() {
 		config := Config{}
 		config.Parse([]byte(`{"server":{}}`))
 	})
@@ -193,7 +193,7 @@ func TestExperimentExceptionWithDuplicateExperimentNames(t *testing.T) {}
 func TestExperimentExceptionWithMissingPercent(t *testing.T)           {}
 func TestExperimentExceptionWithMissingName(t *testing.T)              {}
 func TestExperimentExceptionWithMissingEnabledFlag(t *testing.T)       {}
-func TestExperimentExceptionWithMissingBuckets(t *testing.T)       {}
+func TestExperimentExceptionWithMissingBuckets(t *testing.T)           {}
 
 func TestExperimentBuckedExceptionWithDuplicateNames(t *testing.T)  {}
 func TestExperimentBucketExceptionWithMissingName(t *testing.T)     {}

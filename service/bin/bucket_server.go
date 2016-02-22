@@ -8,83 +8,46 @@ import (
     "net/http"
     "io/ioutil"
     "rocket_bucket"
-    "encoding/json"
 )
 
 var (
     config rocket_bucket.Config
     selector rocket_bucket.Selector
     startupTime time.Time
-    startupTimeString string
 )
-
-func permissionDenied(w http.ResponseWriter) {
-        w.WriteHeader(http.StatusForbidden)
-        w.Write([]byte("Valid API key required."))
-}
-
-type Response struct {
-    StartTime time.Time
-    EndTime time.Time
-    ClientIP string
-    ResponseCode int
-    ResponseString string
-    UserID string
-}
 
 func handler(w http.ResponseWriter, r *http.Request) {
     // handle when url is "/" but request is "/something"
-    // write solid access logs
-
-    var userId string = r.URL.Query().Get("user_id")
-
-    if userId == "" {
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte("user_id must be set"))
-        return
-    }
-
-    w.Header().Set("Content-Type", "application/json")
-    w.Header().Set("Last-Modified", startupTimeString)
     
-    if r.Header.Get("If-Modified-Since") != "" {
-        ifModifiedSince, err := time.Parse(time.RFC1123, r.Header.Get("If-Modified-Since"))
-        
-        if err != nil {
-            log.Panic(err.Error())
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+    defer func() {
+        if err := recover(); err != nil {
+            rocket_bucket.Fatal("%v", err)
         }
+    }()
+    
+    session := rocket_bucket.Session{}
+    wasProcessedOk := session.Process(r, &selector, &config, startupTime)
 
-        if !startupTime.After(ifModifiedSince) {
-            w.WriteHeader(http.StatusNotModified)
-            return
-        }
-    }
-        
+    // set response headers
+    w.Header().Set("Content-Type", "application/json")
+    w.Header().Set("Last-Modified", startupTime.Format(time.RFC1123))
+    
     if config.Server.CacheMaxAge > 0 {
         w.Header().Set("Cache-Control",
             fmt.Sprintf("public, max-age=%d, must-revalidate", config.Server.CacheMaxAge))
     }
-    
-    if config.IsAPIKeyMandatory() {
-        var apiKey string = r.URL.Query().Get("api_key")
-        
-        if (apiKey == "" || !config.IsValidAPIKey(apiKey)) {
-            permissionDenied(w)
-            return
-        }
-    }
-        
-    selectedBuckets := selector.AssignBuckets(userId)
-    
-	jsonBytes, err := json.Marshal(selectedBuckets)
-    
-    if err == nil {
-        w.Write(jsonBytes)
+
+    logString := fmt.Sprintf("processing_time=%.6f, response_code=%d, response_body=`%s`, remote_address=`%s`, user_id=`%s`, api_key=`%s`, log_only_response=`%s`",
+    session.EndTime.Sub(session.StartTime).Seconds(), session.ResponseCode, session.ResponseBody, session.RemoteAddr, session.UserID, session.APIKey, session.PrivateLoggedResponseString)
+
+    if wasProcessedOk {
+        w.WriteHeader(session.ResponseCode)
+        w.Write(session.ResponseBody)
+        rocket_bucket.Info(logString)
     } else {
-        log.Panic(err.Error())
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
+        http.Error(w, string(session.ResponseBody), session.ResponseCode)
+        rocket_bucket.Error(logString)
+    }    
 }
 
 func readConfig() []byte {
@@ -93,7 +56,7 @@ func readConfig() []byte {
     }
     
     configFile := os.Args[1]
-    log.Printf("Using config file %s", configFile)
+    rocket_bucket.Info("using config file %s", configFile)
     
     configData, err := ioutil.ReadFile(configFile)
     
@@ -106,17 +69,14 @@ func readConfig() []byte {
 
 func main() {
     // doing it this way round to remove microseconds from time.Now() (made testing 304 hard)
-    startupTimeString = time.Now().Format(time.RFC1123) 
-    startupTime, _ = time.Parse(time.RFC1123, startupTimeString)
-    
-    log.Printf("%v\n", startupTime)
+    startupTime, _ = time.Parse(time.RFC1123, time.Now().Format(time.RFC1123) )
     
     config = rocket_bucket.Config{}
     config.Parse(readConfig())
 
-    selector = rocket_bucket.Selector{Experiments: config.Experiments}
+    selector = rocket_bucket.Selector{Experiments: &config.Experiments}
 
-    log.Printf("Listening: url: `%s`, port: `%d`", config.Server.URL, config.Server.Port)
+    rocket_bucket.Info("listening: url=`%s`, port=`%d`", config.Server.URL, config.Server.Port)
 
     http.HandleFunc(config.Server.URL, handler)    
     

@@ -1,10 +1,10 @@
 package rocket_bucket
 
 import (
-    // "fmt"
+	// "fmt"
+	"math"
 	"math/rand"
 	"testing"
-    "math"
 )
 
 const letterBytes = `0123456789!@#$%^&*()_+-={}[]:"|;\<>?/.,'~abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`
@@ -17,14 +17,14 @@ func randStringBytes(n int) string {
 	return string(b)
 }
 
-func assertAudienceSizeWithinDeviation(t *testing.T, actual int, expected int)  {
-    expectedFloat := float64(expected)
-    maxExpected := int(math.Ceil(expectedFloat + (expectedFloat * 0.05)))
-    minExpected := int(math.Floor(expectedFloat - (expectedFloat * 0.05)))
-        
-    if (actual < minExpected || actual > maxExpected) {
-        t.Errorf("expected %d-%d, got %d", minExpected, maxExpected, actual)
-    }
+func assertAudienceSizeWithinDeviation(t *testing.T, actual int, expected int) {
+	expectedFloat := float64(expected)
+	maxExpected := int(math.Ceil(expectedFloat + (expectedFloat * 0.05)))
+	minExpected := int(math.Floor(expectedFloat - (expectedFloat * 0.05)))
+
+	if actual < minExpected || actual > maxExpected {
+		t.Errorf("expected %d-%d, got %d", minExpected, maxExpected, actual)
+	}
 }
 
 func TestBucketing(t *testing.T) {
@@ -72,29 +72,29 @@ func TestBucketing(t *testing.T) {
         ]
     }`))
 
-	selector := Selector{Experiments: config.Experiments}
+	selector := Selector{Experiments: &config.Experiments}
 
-    bucketCounter := map[string]map[string]int{}
+	bucketCounter := map[string]map[string]int{}
 
 	for i := 0; i < 100; i++ {
-		someToken := randStringBytes(15)
-		selectedBuckets := selector.AssignBuckets(someToken)
-        for experimentName, bucket := range selectedBuckets {
-            if bucketCounter[experimentName] == nil {
-                bucketCounter[experimentName] = map[string]int{}
-            }
-            
-            bucketCounter[experimentName][bucket.Name] += 1
-        }
+		someUserID := randStringBytes(15)
+		selectedBuckets := selector.AssignBuckets(someUserID)
+		for experimentName, bucket := range selectedBuckets {
+			if bucketCounter[experimentName] == nil {
+				bucketCounter[experimentName] = map[string]int{}
+			}
+
+			bucketCounter[experimentName][bucket.Name] += 1
+		}
 	}
-    
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 1"], 50)
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 2"], 35)
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 3"], 15)
-    
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 1"], 15)
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 2"], 35)
-    assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 3"], 50)
+
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 1"], 50)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 2"], 35)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 3"], 15)
+
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 1"], 15)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 2"], 35)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 3"], 50)
 }
 
 func BenchmarkBucketingfunc(b *testing.B) {
@@ -142,17 +142,17 @@ func BenchmarkBucketingfunc(b *testing.B) {
         ]
     }`))
 
-	selector := Selector{Experiments: config.Experiments}
+	selector := Selector{Experiments: &config.Experiments}
 
-    var tokens [1000000]string
+	var tokens [1000000]string
 
 	for i, _ := range tokens {
 		tokens[i] = randStringBytes(15)
-    }
-    
-    b.ResetTimer()
-    
-    for _, token := range tokens {
+	}
+
+	b.ResetTimer()
+
+	for _, token := range tokens {
 		selector.AssignBuckets(token)
 	}
 }

@@ -5,7 +5,7 @@ import (
 )
 
 type Selector struct {
-	Experiments Experiments
+	Experiments *Experiments
 }
 
 type SelectedBucket struct {
@@ -13,12 +13,12 @@ type SelectedBucket struct {
 	Data *json.RawMessage `json:"data,omitempty"`
 }
 
-func (s *Selector) AssignBuckets(token string) map[string]SelectedBucket {
+func (s *Selector) AssignBuckets(userID string) map[string]SelectedBucket {
 	selectedBuckets := make(map[string]SelectedBucket)
-	tokenHash := hash(token)
+	userIDHash := hash(userID)
 
-	for _, experiment := range s.Experiments {
-        comparableHash := uint64(tokenHash + hash(experiment.Name))
+	for _, experiment := range *s.Experiments {
+		comparableHash := uint64(userIDHash + hash(experiment.Name))
 		for _, bucket := range experiment.Buckets {
 			if uint64(bucket.CumulativeProbability) > (comparableHash % 100) {
 				selectedBucket := SelectedBucket{}
@@ -38,5 +38,3 @@ func (s *Selector) AssignBuckets(token string) map[string]SelectedBucket {
 
 	return selectedBuckets
 }
-
-// THEN READ http://stackoverflow.com/questions/4463561/weighted-random-selection-from-array
