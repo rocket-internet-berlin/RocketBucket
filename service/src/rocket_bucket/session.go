@@ -22,11 +22,10 @@ type Session struct {
 	selector                    *Selector
 }
 
-func (s *Session) Process(request *http.Request, selector *Selector, config *Config, serverStartupTime time.Time) bool {
+func (s *Session) Process(request *http.Request, selector *Selector, config *Config) bool {
 	s.StartTime = time.Now()
 	s.RemoteAddr = request.RemoteAddr
 	s.UserID = request.URL.Query().Get("user_id")
-	s.serverStartupTime = serverStartupTime
 	s.APIKey = request.URL.Query().Get("api_key")
 
 	s.selector = selector
@@ -41,6 +40,10 @@ func (s *Session) Process(request *http.Request, selector *Selector, config *Con
 }
 
 func (s *Session) process() bool {
+	if !s.validateRequestPath() {
+		return false
+	}
+
 	if !s.validateAPIKey() {
 		return false
 	}
@@ -70,6 +73,16 @@ func (s *Session) assignBucket() bool {
 
 	s.ResponseBody = jsonBytes
 	s.ResponseCode = http.StatusOK
+
+	return true
+}
+
+func (s *Session) validateRequestPath() bool {
+	if !s.config.DoesURLMatch(s.request.URL.Path) {
+		s.ResponseCode = http.StatusNotFound
+		s.ResponseBody = []byte(fmt.Sprintf("Unknown path %s", s.request.URL.Path))
+		return false
+	}
 
 	return true
 }
@@ -110,7 +123,7 @@ func (s *Session) isModified() bool {
 		return true
 	}
 
-	if !s.serverStartupTime.After(ifModifiedSince) {
+	if !s.config.LastParsed.After(ifModifiedSince) {
 		s.ResponseCode = http.StatusNotModified
 		return false
 	}

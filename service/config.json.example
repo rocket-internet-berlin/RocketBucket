@@ -1,25 +1,25 @@
 {
     "server":{
         "port":8080,
-        "url":"/",
-        "cache_max_age":10
+        "url":"/split",
+        "cache_max_age":3600
     },
     "experiments":[
         {
-            "name":"experiment 1",
+            "name":"checkout button colors",
             "enabled":true,
             "buckets":[
                 {
-                    "name": "bucket 1",
+                    "name": "control group (green button)",
                     "percent":50
                 },
                 {
-                    "name":"bucket 2",
-                    "percent":35
+                    "name":"variant (red button)",
+                    "percent":25
                 },
                 {
-                    "name":"bucket 3",
-                    "percent":15
+                    "name":"variant (blue button)",
+                    "percent":25
                 }
             ]
         }

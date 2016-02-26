@@ -5,6 +5,7 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"time"
 )
 
 const minimumAPIKeyLength = 32
@@ -35,8 +36,11 @@ type Experiment struct {
 }
 
 type Config struct {
-	Server      ServerConfig "json:server"
-	Experiments Experiments  "json:experiment"
+	Server               ServerConfig
+	Experiments          Experiments
+	TemporaryServer      ServerConfig `json:"server"`
+	TemporaryExperiments Experiments  `json:"experiments"`
+	LastParsed           time.Time
 }
 
 func (slice Buckets) Len() int {
@@ -52,6 +56,10 @@ func (slice Buckets) Swap(i, j int) {
 }
 
 func (c *Config) Parse(rawJson []byte) {
+	// incase a previous config had something set and a new version does not
+	c.TemporaryServer = ServerConfig{}
+	c.TemporaryExperiments = Experiments{}
+
 	err := json.Unmarshal(rawJson, &c)
 
 	if err != nil {
@@ -60,6 +68,12 @@ func (c *Config) Parse(rawJson []byte) {
 
 	c.tidyExperiments()
 	c.tidyServerConfig()
+
+	// instant switch over incase this is happening live
+	c.Server = c.TemporaryServer
+	c.Experiments = c.TemporaryExperiments
+	// hack to remove microseconds which make testing 304 impossible
+	c.LastParsed, _ = time.Parse(time.RFC1123, time.Now().Format(time.RFC1123))
 }
 
 func (c *Config) IsAPIKeyMandatory() bool {
@@ -70,9 +84,13 @@ func (c *Config) IsValidAPIKey(possibleKey string) bool {
 	return c.Server.APIKeyMap[possibleKey]
 }
 
+func (c *Config) DoesURLMatch(requestedURL string) bool {
+	return c.tidyURL(requestedURL) == c.Server.URL
+}
+
 func (c *Config) tidyExperiments() {
 	var enabledOnlyExperiments []Experiment
-	for _, experiment := range c.Experiments {
+	for _, experiment := range c.TemporaryExperiments {
 		Info("parsing experiment `%s`...", experiment.Name)
 
 		if experiment.IsEnabled {
@@ -83,7 +101,7 @@ func (c *Config) tidyExperiments() {
 			Info("experiment `%s` disabled. Skipping.", experiment.Name)
 		}
 	}
-	c.Experiments = enabledOnlyExperiments
+	c.TemporaryExperiments = enabledOnlyExperiments
 }
 
 func (c *Config) tidyBucketsFor(experiment Experiment) {
@@ -104,28 +122,36 @@ func (c *Config) tidyBucketsFor(experiment Experiment) {
 	}
 }
 
+func (c *Config) tidyURL(url string) string {
+	if strings.HasSuffix(url, "/") && len(url) > 1 {
+		url = strings.TrimRight(url, "/")
+	}
+
+	return url
+}
+
 func (c *Config) tidyServerConfig() {
-	if c.Server.Port == 0 {
+	if c.TemporaryServer.Port == 0 {
 		Fatal("no server port set")
 	}
 
-	if len(c.Server.URL) == 0 {
-		c.Server.URL = "/"
-	} else if strings.HasSuffix(c.Server.URL, "/") && len(c.Server.URL) > 1 {
-		c.Server.URL = strings.TrimRight(c.Server.URL, "/")
+	if len(c.TemporaryServer.URL) == 0 {
+		c.TemporaryServer.URL = "/"
+	} else {
+		c.TemporaryServer.URL = c.tidyURL(c.TemporaryServer.URL)
 	}
 
-	if len(c.Server.APIKeys) == 0 {
+	if len(c.TemporaryServer.APIKeys) == 0 {
 		Info("no API keys are set (api_keys in config). Anybody with access to this service can query it!")
 	} else {
-		c.Server.APIKeyMap = make(map[string]bool, len(c.Server.APIKeys))
-		for _, key := range c.Server.APIKeys {
+		c.TemporaryServer.APIKeyMap = make(map[string]bool, len(c.TemporaryServer.APIKeys))
+		for _, key := range c.TemporaryServer.APIKeys {
 			if len(key) < minimumAPIKeyLength {
 				Fatal("API key `%s` too short (minimum %d characters)", key, minimumAPIKeyLength)
 			}
 
 			Info("using API key: `%s`", key)
-			c.Server.APIKeyMap[key] = true
+			c.TemporaryServer.APIKeyMap[key] = true
 		}
 	}
 }

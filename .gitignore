@@ -1,3 +1,5 @@
 .DS_Store
 .tm_properties
 tmp/
+service/bin/*
+service/pkg/*

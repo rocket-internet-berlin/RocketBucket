@@ -4,7 +4,14 @@ import (
 	// "fmt"
 	"strings"
 	"testing"
+	"time"
 )
+
+var config Config
+
+func init() {
+	config = Config{}
+}
 
 func assertException(t *testing.T, expectedException string, f func()) {
 	defer func() {
@@ -17,7 +24,6 @@ func assertException(t *testing.T, expectedException string, f func()) {
 }
 
 func TestServerConfig(t *testing.T) {
-	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080,"url":"/blah"}}`))
 
 	if config.Server.Port != 8080 {
@@ -34,7 +40,6 @@ func TestServerConfig(t *testing.T) {
 }
 
 func TestServerDefaultURL(t *testing.T) {
-	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080}}`))
 
 	if config.Server.URL != "/" {
@@ -43,7 +48,6 @@ func TestServerDefaultURL(t *testing.T) {
 }
 
 func TestServerStripTrailingSlashesFromURL(t *testing.T) {
-	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080, "url":"/blah//"}}`))
 
 	if strings.HasSuffix(config.Server.URL, "/") {
@@ -51,10 +55,21 @@ func TestServerStripTrailingSlashesFromURL(t *testing.T) {
 	}
 }
 
+func TestDoesURLMatch(t *testing.T) {
+	config.Parse([]byte(`{"server":{"port":8080, "url":"/blah"}}`))
+
+	if !config.DoesURLMatch("/blah/") {
+		t.Error("cleaned up urls should match")
+	}
+
+	if config.DoesURLMatch("/wrong/") {
+		t.Error("unmatching urls should not match")
+	}
+}
+
 func TestServerInvalidURL(t *testing.T) {}
 
 func TestServerCacheMaxAge(t *testing.T) {
-	config := Config{}
 	config.Parse([]byte(`{"server":{"port":8080,"cache_max_age":3600}}`))
 
 	if config.Server.CacheMaxAge != 3600 {
@@ -63,8 +78,6 @@ func TestServerCacheMaxAge(t *testing.T) {
 }
 
 func TestServerApiKeys(t *testing.T) {
-	config := Config{}
-
 	config.Parse([]byte(`{
         "server":{
             "port":8080,
@@ -87,10 +100,18 @@ func TestServerApiKeys(t *testing.T) {
 	}
 }
 
+func TestLastParsedDate(t *testing.T) {
+	oldenTimes := time.Now().Add(-10 * time.Minute)
+	config.LastParsed = oldenTimes
+	config.Parse([]byte(`{"server":{"port":8080}}`))
+
+	if !config.LastParsed.After(oldenTimes) {
+		t.Errorf("LastParsed not set %v", config.LastParsed)
+	}
+}
+
 func TestShortApiKey(t *testing.T) {
 	assertException(t, "API key `abc` too short", func() {
-		config := Config{}
-
 		config.Parse([]byte(`{
             "server":{
                 "port":8080,
@@ -110,8 +131,6 @@ func TestExceptionOnMissingServerPort(t *testing.T) {
 }
 
 func TestExperimentFullExperimentData(t *testing.T) {
-	config := Config{}
-
 	config.Parse([]byte(`{
         "server":{"port":8080},
         "experiments":[
@@ -201,7 +220,6 @@ func TestExperimentBucketExceptionWithMissingAudience(t *testing.T) {}
 
 func TestExperimentBucketsExceptionWithNot100PercentCoverage(t *testing.T) {
 	assertException(t, `do not total 100% (actual: 66%)`, func() {
-		config := Config{}
 		config.Parse([]byte(`{
             "server":{"port":8080},
             "experiments":[
