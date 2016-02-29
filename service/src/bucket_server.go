@@ -45,14 +45,14 @@ func setupSIGHUPHandler() {
 	go func() {
 		for range c {
 			rocket_bucket.Info("received SIGHUP")
-            loadConfig()
+			loadConfig()
 		}
 	}()
 }
 
 func main() {
 	config = &rocket_bucket.Config{}
-    selector := &rocket_bucket.Selector{Experiments: &config.Experiments}
+	selector := &rocket_bucket.Selector{Experiments: &config.Experiments}
 
 	loadConfig()
 	setupSIGHUPHandler()

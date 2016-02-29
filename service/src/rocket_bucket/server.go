@@ -31,15 +31,15 @@ func (s *Server) HandleRequest(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("public, max-age=%d, must-revalidate", s.Config.Server.CacheMaxAge))
 	}
 
-	logString := fmt.Sprintf("processing_time=%.6f, response_code=%d, response_body=`%s`, remote_address=`%s`, user_id=`%s`, api_key=`%s`, log_only_response=`%s`",
+	logString := fmt.Sprintf("processing_time=%.6f, response_code=%d, response_body=`%s`, remote_address=`%s`, user_id=`%s`, x_api_key=`%s`, log_only_response=`%s`",
 		session.EndTime.Sub(session.StartTime).Seconds(), session.ResponseCode, session.ResponseBody, session.RemoteAddr, session.UserID, session.APIKey, session.PrivateLoggedResponseString)
 
+	w.WriteHeader(session.ResponseCode)
+	w.Write(session.ResponseBody)
+
 	if wasProcessedOk {
-		w.WriteHeader(session.ResponseCode)
-		w.Write(session.ResponseBody)
 		Info(logString)
 	} else {
-		http.Error(w, string(session.ResponseBody), session.ResponseCode)
 		Error(logString)
 	}
 }

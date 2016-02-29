@@ -40,23 +40,15 @@ func (s *Session) Process(request *http.Request, selector *Selector, config *Con
 }
 
 func (s *Session) process() bool {
-	if !s.validateAPIKey() {
-		return false
+	if s.validateAPIKey() && s.validateRequestPath() && s.validateUserID() {
+		if !s.isModified() || s.assignBucket() {
+			return true
+		}
 	}
 
-	if !s.validateRequestPath() {
-		return false
-	}
+	s.ResponseBody, _ = json.Marshal(map[string]interface{}{"error": string(s.ResponseBody)})
 
-	if !s.validateUserID() {
-		return false
-	}
-
-	if !s.isModified() {
-		return true
-	}
-
-	return s.assignBucket()
+	return false
 }
 
 func (s *Session) assignBucket() bool {
