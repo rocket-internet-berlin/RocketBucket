@@ -13,7 +13,7 @@ import (
 
 const apiKey = `01234567890123456789012345678912`
 
-func makeRequest(query string, path string, header http.Header) httptest.ResponseRecorder {
+func makeRequest(userID string, path string, header http.Header) httptest.ResponseRecorder {
 	config := Config{}
 	config.Parse([]byte(fmt.Sprintf(`{
         "server":{
@@ -46,7 +46,7 @@ func makeRequest(query string, path string, header http.Header) httptest.Respons
 	response := httptest.NewRecorder()
 	req := &http.Request{
 		Method: "GET",
-		URL:    &url.URL{Path: path, RawQuery: query},
+		URL:    &url.URL{Path: path, RawQuery: fmt.Sprintf("user_id=%s", userID)},
 		Header: header,
 	}
 
@@ -56,7 +56,7 @@ func makeRequest(query string, path string, header http.Header) httptest.Respons
 }
 
 func TestMissingUserID(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("api_key=%s", apiKey), "/", http.Header{})
+	response := makeRequest("", "/", http.Header{"X-Api-Key": {apiKey}})
 
 	if response.Code != 400 {
 		t.Errorf("expected 400 response code, got %d", response.Code)
@@ -64,7 +64,7 @@ func TestMissingUserID(t *testing.T) {
 }
 
 func TestMissingAPIKey(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("user_id=123", apiKey), "/", http.Header{})
+	response := makeRequest("123", "/", http.Header{})
 
 	if response.Code != 403 {
 		t.Errorf("expected 403 response code, got %d", response.Code)
@@ -72,7 +72,7 @@ func TestMissingAPIKey(t *testing.T) {
 }
 
 func Test404SuperfluousPath(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("user_id=123&api_key=%s", apiKey), "/should404", http.Header{})
+	response := makeRequest("123", "/should404", http.Header{"X-Api-Key": {apiKey}})
 
 	if response.Code != 404 {
 		t.Errorf("expected 404 response code, got %d", response.Code)
@@ -80,7 +80,7 @@ func Test404SuperfluousPath(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("user_id=123&api_key=%s", apiKey), "/", http.Header{})
+	response := makeRequest("123", "/", http.Header{"X-Api-Key": {apiKey}})
 	headers := response.Header()
 
 	if headers["Cache-Control"][0] != "public, max-age=3600, must-revalidate" {
@@ -97,14 +97,14 @@ func TestHeaders(t *testing.T) {
 }
 
 func TestNotModified(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("user_id=123&api_key=%s", apiKey), "/", http.Header{"If-Modified-Since": {time.Now().Format(time.RFC1123)}})
+	response := makeRequest("123", "/", http.Header{"If-Modified-Since": {time.Now().Format(time.RFC1123)}, "X-Api-Key": {apiKey}})
 
 	if response.Code != 304 {
 		t.Errorf("expected 304 response code, got %d", response.Code)
 	}
 
 	// just make sure it's modified since the past
-	response = makeRequest(fmt.Sprintf("user_id=123&api_key=%s", apiKey), "/", http.Header{"If-Modified-Since": {time.Now().Add(-10 * time.Minute).Format(time.RFC1123)}})
+	response = makeRequest("123", "/", http.Header{"If-Modified-Since": {time.Now().Add(-10 * time.Minute).Format(time.RFC1123)}, "X-Api-Key": {apiKey}})
 
 	if response.Code != 200 {
 		t.Errorf("expected 200 response code, got %d", response.Code)
@@ -112,7 +112,7 @@ func TestNotModified(t *testing.T) {
 }
 
 func TestValidResponse(t *testing.T) {
-	response := makeRequest(fmt.Sprintf("user_id=123&api_key=%s", apiKey), "/", http.Header{})
+	response := makeRequest("123", "/", http.Header{"X-Api-Key": {apiKey}})
 
 	if response.Code != 200 {
 		t.Errorf("expected 200 response code, got %d", response.Code)

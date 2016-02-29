@@ -26,7 +26,7 @@ func (s *Session) Process(request *http.Request, selector *Selector, config *Con
 	s.StartTime = time.Now()
 	s.RemoteAddr = request.RemoteAddr
 	s.UserID = request.URL.Query().Get("user_id")
-	s.APIKey = request.URL.Query().Get("api_key")
+	s.APIKey = request.Header.Get("X-Api-Key")
 
 	s.selector = selector
 	s.config = config
@@ -40,11 +40,11 @@ func (s *Session) Process(request *http.Request, selector *Selector, config *Con
 }
 
 func (s *Session) process() bool {
-	if !s.validateRequestPath() {
+	if !s.validateAPIKey() {
 		return false
 	}
 
-	if !s.validateAPIKey() {
+	if !s.validateRequestPath() {
 		return false
 	}
 
@@ -94,7 +94,7 @@ func (s *Session) validateAPIKey() bool {
 
 	if s.APIKey == "" || !s.config.IsValidAPIKey(s.APIKey) {
 		s.ResponseCode = http.StatusForbidden
-		s.ResponseBody = []byte("Valid API key required.")
+		s.ResponseBody = []byte("Invalid value for X-Api-Key header.")
 		return false
 	}
 
