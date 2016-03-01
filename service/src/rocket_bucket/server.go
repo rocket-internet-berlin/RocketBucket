@@ -24,24 +24,25 @@ func (s *Server) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// set response headers
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Last-Modified", s.Config.LastParsed.Format(time.RFC1123))
-
-	if s.Config.Server.CacheMaxAge > 0 {
-		w.Header().Set("Cache-Control",
-			fmt.Sprintf("public, max-age=%d, must-revalidate", s.Config.Server.CacheMaxAge))
-	}
 
 	logString := fmt.Sprintf("processing_time=%.6f, response_code=%d, response_body=`%s`, remote_address=`%s`, user_id=`%s`, x_api_key=`%s`, log_only_response=`%s`",
 		session.EndTime.Sub(session.StartTime).Seconds(), session.ResponseCode, session.ResponseBody, session.RemoteAddr, session.UserID, session.APIKey, session.PrivateLoggedResponseString)
 
-	w.WriteHeader(session.ResponseCode)
-	w.Write(session.ResponseBody)
-
 	if wasProcessedOk {
+		w.Header().Set("Last-Modified", s.Config.LastParsed.Format(time.RFC1123))
+
+		if s.Config.Server.CacheMaxAge > 0 {
+			w.Header().Set("Cache-Control",
+				fmt.Sprintf("public, max-age=%d, must-revalidate", s.Config.Server.CacheMaxAge))
+		}
+
 		Info(logString)
 	} else {
 		Error(logString)
 	}
+
+	w.WriteHeader(session.ResponseCode)
+	w.Write(session.ResponseBody)
 }
 
 func (s *Server) Run() {
