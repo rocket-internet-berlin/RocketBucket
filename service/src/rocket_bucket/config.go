@@ -27,19 +27,26 @@ type Bucket struct {
 
 type Buckets []Bucket
 type Experiments []Experiment
+type RawExperiments map[string]RawExperiment
 
 type Experiment struct {
-	Name      string  `json:"name"`
+	Name      string
+	IsEnabled bool
+	Buckets   Buckets
+	Hash      uint32
+}
+
+type RawExperiment struct {
 	IsEnabled bool    `json:"enabled"`
 	Buckets   Buckets `json:"buckets"`
-	Hash      uint32
 }
 
 type Config struct {
 	Server               ServerConfig
 	Experiments          Experiments
 	TemporaryServer      ServerConfig `json:"server"`
-	TemporaryExperiments Experiments  `json:"experiments"`
+	TemporaryExperiments Experiments
+	RawExperiments       RawExperiments `json:"experiments"`
 	LastParsed           time.Time
 }
 
@@ -89,19 +96,17 @@ func (c *Config) DoesURLMatch(requestedURL string) bool {
 }
 
 func (c *Config) tidyExperiments() {
-	var enabledOnlyExperiments []Experiment
-	for _, experiment := range c.TemporaryExperiments {
-		Info("parsing experiment `%s`...", experiment.Name)
+	for name, experiment := range c.RawExperiments {
+		Info("parsing experiment `%s`...", name)
 
 		if experiment.IsEnabled {
-			experiment.Hash = hash(experiment.Name)
-			c.tidyBucketsFor(experiment)
-			enabledOnlyExperiments = append(enabledOnlyExperiments, experiment)
+			tidyExperiment := Experiment{Name: name, IsEnabled: experiment.IsEnabled, Buckets: experiment.Buckets, Hash: hash(name)}
+			c.tidyBucketsFor(tidyExperiment)
+			c.TemporaryExperiments = append(c.TemporaryExperiments, tidyExperiment)
 		} else {
-			Info("experiment `%s` disabled. Skipping.", experiment.Name)
+			Info("experiment `%s` disabled. Skipping.", name)
 		}
 	}
-	c.TemporaryExperiments = enabledOnlyExperiments
 }
 
 func (c *Config) tidyBucketsFor(experiment Experiment) {

@@ -32,9 +32,8 @@ func TestBucketing(t *testing.T) {
 
 	config.Parse([]byte(`{
         "server":{"port":8080},
-        "experiments":[
-            {
-                "name":"experiment 1",
+        "experiments":{
+            "experiment 1":{
                 "enabled":true,
                 "buckets":[
                     {
@@ -51,8 +50,7 @@ func TestBucketing(t *testing.T) {
                     }
                 ]
             },
-            {
-                "name":"experiment 2",
+            "experiment 2":{
                 "enabled":true,
                 "buckets":[
                     {
@@ -69,7 +67,7 @@ func TestBucketing(t *testing.T) {
                     }
                 ]
             }
-        ]
+        }
     }`))
 
 	selector := Selector{Experiments: &config.Experiments}

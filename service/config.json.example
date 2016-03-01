@@ -7,9 +7,8 @@
             "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         ]
     },
-    "experiments":[
-        {
-            "name":"checkout button colors",
+    "experiments":{
+        "checkout button colors":{
             "enabled":true,
             "buckets":[
                 {
@@ -29,8 +28,7 @@
                 }
             ]
         },
-        {
-            "name":"search call to action",
+        "search call to action":{
             "enabled":true,
             "buckets":[
                 {
@@ -44,5 +42,5 @@
                 }
             ]
         }
-    ]
+    }
 }

@@ -24,9 +24,8 @@ func makeRequest(userID string, path string, header http.Header) httptest.Respon
                 "%s"
             ]
         },
-        "experiments":[
-            {
-                "name":"experiment",
+        "experiments":{
+            "experiment":{
                 "enabled":true,
                 "buckets":[
                     {
@@ -36,7 +35,7 @@ func makeRequest(userID string, path string, header http.Header) httptest.Respon
                     }
                 ]
             }
-        ]
+        }
     }`, apiKey)))
 
 	selector := Selector{Experiments: &config.Experiments}
@@ -122,7 +121,13 @@ func TestValidResponse(t *testing.T) {
 
 	json.Unmarshal(response.Body.Bytes(), &decoded)
 
-	experiment := decoded["experiment"]
+	experiments := decoded["experiments"]
+
+	if experiments == nil {
+		t.Errorf("missing all experiments from response")
+	}
+
+	experiment := experiments.(map[string]interface{})["experiment"]
 
 	if experiment == nil {
 		t.Errorf("missing experiment from response")

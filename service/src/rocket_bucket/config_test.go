@@ -133,9 +133,8 @@ func TestExceptionOnMissingServerPort(t *testing.T) {
 func TestExperimentFullExperimentData(t *testing.T) {
 	config.Parse([]byte(`{
         "server":{"port":8080},
-        "experiments":[
-            {
-                "name":"experiment 1",
+        "experiments":{
+            "experiment 1":{
                 "enabled":true,
                 "buckets":[
                     {
@@ -154,11 +153,10 @@ func TestExperimentFullExperimentData(t *testing.T) {
                     }
                 ]
             },
-            {
-                "name":"disabled experiment",
+            "disabled experiment":{
                 "enabled":false
             }
-        ]
+        }
     }`))
 
 	if config.Experiments[0].Name != "experiment 1" {
@@ -208,7 +206,6 @@ func TestExperimentFullExperimentData(t *testing.T) {
 	}
 }
 
-func TestExperimentExceptionWithDuplicateExperimentNames(t *testing.T) {}
 func TestExperimentExceptionWithMissingPercent(t *testing.T)           {}
 func TestExperimentExceptionWithMissingName(t *testing.T)              {}
 func TestExperimentExceptionWithMissingEnabledFlag(t *testing.T)       {}
@@ -222,9 +219,8 @@ func TestExperimentBucketsExceptionWithNot100PercentCoverage(t *testing.T) {
 	assertException(t, `do not total 100% (actual: 66%)`, func() {
 		config.Parse([]byte(`{
             "server":{"port":8080},
-            "experiments":[
-                {
-                    "name":"not complete percentage",
+            "experiments":{
+                "not complete percentage":{
                     "enabled":true,
                     "buckets":[
                         {
@@ -239,7 +235,7 @@ func TestExperimentBucketsExceptionWithNot100PercentCoverage(t *testing.T) {
                         }
                     ]
                 }
-            ]
+            }
         }`))
 	})
 }
