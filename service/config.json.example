@@ -2,7 +2,10 @@
     "server":{
         "port":8080,
         "url":"/split",
-        "cache_max_age":3600
+        "cache_max_age":3600,
+        "api_keys":[
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        ]
     },
     "experiments":[
         {
@@ -11,15 +14,33 @@
             "buckets":[
                 {
                     "name": "control group (green button)",
-                    "percent":50
+                    "percent":50,
+                    "data":[{"name":"color","value":"#00FF00"}]
                 },
                 {
                     "name":"variant (red button)",
-                    "percent":25
+                    "percent":25,
+                    "data":[{"name":"color","value":"#FF0000"}]
                 },
                 {
                     "name":"variant (blue button)",
-                    "percent":25
+                    "percent":25,
+                    "data":[{"name":"color","value":"#0000FF"}]
+                }
+            ]
+        },
+        {
+            "name":"search call to action",
+            "enabled":true,
+            "buckets":[
+                {
+                    "name": "control group (current)",
+                    "percent":50
+                },
+                {
+                    "name":"all caps craziness",
+                    "percent":50,
+                    "data":[{"name":"call to action string","value":"CLICK HERE!!!"}]
                 }
             ]
         }
