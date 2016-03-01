@@ -12,13 +12,13 @@ If Go (compatible with 1.4.2) is installed, that would have worked and you can r
 
 ## How It Works
 
-The bucket_server is stateless. It stores no data nor does it access any whilst running. When the service starts up, it reads a configuration file (specified on the command line). This configuration file contains server info and experiment data.
+The bucket_server is stateless. It stores no data nor does it access any whilst running. It uses an algorithm to calculate it's results based on the user_id and names of available experiments. The result of this is returned as JSON containing all the experiments and buckets a user is eligible for. This can then be cached by the client.
 
 During the bucket_server startup, it parses the experiment data from the config file and calculates a hash of the experiment name, resulting in a 32 bit number. It orders the buckets by smallest to largest and accumulates the percentages. All this is kept in memory and used at the time of an HTTP request.
 
 When an HTTP request is made to the bucket_server, a user_id parameter must be passed from the client. Like each experiment name, a hash is taken of the user_id and the experiment name hash and user_id hash are added together (`hash(user_id) + hash(experiment name)`). Each experiment and each of it's buckets are then looped through and user/experiment name combination are assigned to a bucket.
 
-It's very important to keep in mind that the user_id and experiment name are used in cominbation. If you change the user_id OR the experiment name, the results from the bucket_server may change. This is intentional. While the user_id makes sense, the reason for using the experiment name is more subtle. If you imagine the follwing experiment setup:
+It's very important to keep in mind that the user_id and experiment name are used in combination. If you change the user_id OR the experiment name, the results from the bucket_server may change. This is intentional. While using the user_id for bucketing is obvious, the reason for using the experiment name is more subtle. If you imagine the follwing experiment setup:
 
 1. An experiment for checkout button color:
   1. 50% of users see a RED button.
@@ -27,17 +27,18 @@ It's very important to keep in mind that the user_id and experiment name are use
   1. 50% of users see "Checkout now!"
   1. 50% of users see "Buy!"
 
-If we only use the user_id, users will only ever see a RED checkout button with "Checkout now!" or a BLUE checkout button with "Buy!". If more people press the checkout button, we will be unsure whether the color or the text was more or less important. We therefore include the experiment name in order to decrease the overlap in such (or similar) of a case. It's also worth noting that, without using the experiment name to bucket, some users will always be experimented on.
+If we only use the user_id, users will only ever see a RED checkout button with "Checkout now!" or a BLUE checkout button with "Buy!". If more people press the checkout button, we will be unsure whether the color or the text was more or less important. We therefore include the experiment name in order to decrease the overlap in such cases. It's also worth noting that, without using the experiment name to assist in bucketing, some users will always be experimented on.
 
 The guts of this algorithm can be found in service/src/rocket_bucket/selector.go in the AssignBuckets method.
 
 ## Configuration
 
-Everything is set up in 1 JSON configuration file. It has two top level sections:
+Everything is set up in 1 JSON configuration file. It has the following structure:
 
 * `server` (object): this provides setup for the running bucket_server.
   * `port` (int): the port the bucket_server should listen on for HTTP connections.
   * `url` (string, optional, default '/'): the url/path the bucket_server should respond to.
+  * `cache_max_age` (int, optional, default 0): the number of seconds the bucket_server recommends to clients for caching responses. It will appear in the Cache-Control HTTP header.
   * `api_keys` (array of 32 byte strings, optional): if set, bucket_server will require the "X-Api-Key" header to be set in the HTTP request and only the keys listed in this section will be considered valid. All must be 32 characters long.
 * `experiments` (array of objects): this contains an array of the following objects
   * _experiment_ (object): an experiment.
