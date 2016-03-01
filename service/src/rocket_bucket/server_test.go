@@ -24,18 +24,19 @@ func makeRequest(userID string, path string, header http.Header) httptest.Respon
                 "%s"
             ]
         },
-        "experiments":{
-            "experiment":{
+        "experiments":[
+            {
+                "name":"experiment",
                 "enabled":true,
                 "buckets":[
                     {
                         "name": "bucket",
                         "percent":100,
-                        "data":{"some data key":"some data value"}
+                        "data":[{"name":"some name","value":"some value"}]
                     }
                 ]
             }
-        }
+        ]
     }`, apiKey)))
 
 	selector := Selector{Experiments: &config.Experiments}
@@ -117,33 +118,39 @@ func TestValidResponse(t *testing.T) {
 		t.Errorf("expected 200 response code, got %d", response.Code)
 	}
 
-	var decoded map[string]interface{}
+	var decoded map[string]json.RawMessage
 
 	json.Unmarshal(response.Body.Bytes(), &decoded)
+    
+    experiments := decoded["experiments"]
 
-	experiments := decoded["experiments"]
+    if experiments == nil {
+        t.Errorf("missing all experiments from response")
+    }
+    
+    var decodedExperiments []SelectedExperiment
+    
+    json.Unmarshal(experiments, &decodedExperiments)
+    
+    experiment := decodedExperiments[0]
 
-	if experiments == nil {
-		t.Errorf("missing all experiments from response")
-	}
+    if experiment.Name != "experiment" {
+        t.Errorf("missing experiment from response")
+    }
 
-	experiment := experiments.(map[string]interface{})["experiment"]
+    if experiment.Bucket.Name != "bucket" {
+        t.Errorf("missing experiment bucket from response")
+    }
 
-	if experiment == nil {
-		t.Errorf("missing experiment from response")
-	}
+    if experiment.Bucket.Data == nil {
+        t.Errorf("missing experiment bucket data from response")
+    }
 
-	if experiment.(map[string]interface{})["name"] != "bucket" {
-		t.Errorf("missing experiment bucket from response")
-	}
+    var experimentData []map[string]interface{}
+    
+    json.Unmarshal(*experiment.Bucket.Data, &experimentData)
 
-	experimentData := experiment.(map[string]interface{})["data"]
-
-	if experimentData == nil {
-		t.Errorf("missing experiment bucket data from response")
-	}
-
-	if experimentData.(map[string]interface{})["some data key"] != "some data value" {
-		t.Errorf("missing experiment bucket data value from response")
-	}
+    if experimentData[0]["name"] != "some name" || experimentData[0]["value"] != "some value" {
+        t.Errorf("corrupt experiment bucket data value from response")
+    }
 }

@@ -32,8 +32,9 @@ func TestBucketing(t *testing.T) {
 
 	config.Parse([]byte(`{
         "server":{"port":8080},
-        "experiments":{
-            "experiment 1":{
+        "experiments":[
+            {
+                "name":"experiment 1",
                 "enabled":true,
                 "buckets":[
                     {
@@ -50,7 +51,8 @@ func TestBucketing(t *testing.T) {
                     }
                 ]
             },
-            "experiment 2":{
+            {
+                "name":"experiment 2",
                 "enabled":true,
                 "buckets":[
                     {
@@ -67,7 +69,7 @@ func TestBucketing(t *testing.T) {
                     }
                 ]
             }
-        }
+        ]
     }`))
 
 	selector := Selector{Experiments: &config.Experiments}
@@ -76,13 +78,13 @@ func TestBucketing(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		someUserID := randStringBytes(15)
-		selectedBuckets := selector.AssignBuckets(someUserID)
-		for experimentName, bucket := range selectedBuckets {
-			if bucketCounter[experimentName] == nil {
-				bucketCounter[experimentName] = map[string]int{}
+		selectedExperiments := selector.AssignBuckets(someUserID)
+		for _, experiment := range selectedExperiments {
+			if bucketCounter[experiment.Name] == nil {
+				bucketCounter[experiment.Name] = map[string]int{}
 			}
 
-			bucketCounter[experimentName][bucket.Name] += 1
+			bucketCounter[experiment.Name][experiment.Bucket.Name] += 1
 		}
 	}
 

@@ -41,7 +41,7 @@ func (s *Session) Process(request *http.Request, selector *Selector, config *Con
 
 func (s *Session) process() bool {
 	if s.validateAPIKey() && s.validateRequestPath() && s.validateUserID() {
-		if !s.isModified() || s.assignExperimentBuckets() {
+		if !s.isModified() || s.assignBucket() {
 			return true
 		}
 	}
@@ -51,10 +51,10 @@ func (s *Session) process() bool {
 	return false
 }
 
-func (s *Session) assignExperimentBuckets() bool {
-	selectedBuckets := s.selector.AssignBuckets(s.UserID)
+func (s *Session) assignBucket() bool {
+	selectedExperiments := s.selector.AssignBuckets(s.UserID)
 
-	jsonBytes, err := json.Marshal(map[string]interface{}{"experiments": selectedBuckets})
+	jsonBytes, err := json.Marshal(map[string]interface{}{"experiments": selectedExperiments})
 
 	if err != nil {
 		s.ResponseCode = http.StatusInternalServerError

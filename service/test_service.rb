@@ -54,11 +54,11 @@ headers = {}
 headers['X-Api-Key'] = api_key if api_key
 longest_bucket_name = 0
 
-(server_config["experiments"] || []).each do |name, experiment|
-  experiments[name] ||= {expected: {}, got: {}, total: 0}
+(server_config["experiments"] || []).each do |experiment|
+  experiments[experiment["name"]] ||= {expected: {}, got: {}, total: 0}
   
   experiment["buckets"].each do |bucket|
-    experiments[name][:expected][bucket["name"]] = bucket["percent"]
+    experiments[experiment["name"]][:expected][bucket["name"]] = bucket["percent"]
   end
 end
 
@@ -82,8 +82,9 @@ user_ids.each_with_index do |user_id, i|
   
   if @response.code.to_i == 200
     success_count += 1
-    puts @response.body
-    JSON.parse(@response.body)['experiments'].each do |experiment_name, bucket|
+    JSON.parse(@response.body)['experiments'].each do |experiment|
+      experiment_name = experiment['name']
+      bucket = experiment['bucket']
       longest_bucket_name = bucket["name"].length if bucket["name"].length > longest_bucket_name
 
       experiments[experiment_name][:total] += 1
