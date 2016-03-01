@@ -1,7 +1,6 @@
 package rocket_bucket
 
 import (
-	// "fmt"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +16,7 @@ func assertException(t *testing.T, expectedException string, f func()) {
 	defer func() {
 		err := recover()
 		if err == nil || !strings.Contains(err.(string), expectedException) {
-			t.Errorf("Expected exception containing `%s`. Got `%s`.", expectedException, err)
+			t.Fatalf("Expected exception containing `%s`. Got `%s`.", expectedException, err)
 		}
 	}()
 	f()
@@ -141,12 +140,12 @@ func TestExperimentFullExperimentData(t *testing.T) {
                     {
                         "name": "bucket 1",
                         "percent":20,
-                        "data":{"some data":123}
+                        "data":[{"name":"some data","value":"some value"}]
                     },
                     {
                         "name":"bucket 2",
                         "percent":50,
-                        "data":"some other data"
+                        "data":[{"name":"some other data","value":"some other value"}]
                     },
                     {
                         "name":"bucket 3",
@@ -156,7 +155,8 @@ func TestExperimentFullExperimentData(t *testing.T) {
             },
             {
                 "name":"disabled experiment",
-                "enabled":false
+                "enabled":false,
+                "buckets":[{"name":"everyone","percent":100}]
             }
         ]
     }`))
@@ -193,7 +193,7 @@ func TestExperimentFullExperimentData(t *testing.T) {
 		t.Error("last bucket has lowest percentage")
 	}
 
-	if string(config.Experiments[0].Buckets[0].Data) != `{"some data":123}` {
+	if config.Experiments[0].Buckets[0].Data[0].Name != "some data" || config.Experiments[0].Buckets[0].Data[0].Value != "some value" {
 		t.Error("bucket data is incorrect")
 	}
 
@@ -208,15 +208,104 @@ func TestExperimentFullExperimentData(t *testing.T) {
 	}
 }
 
-func TestExperimentExceptionWithDuplicateExperimentNames(t *testing.T) {}
-func TestExperimentExceptionWithMissingPercent(t *testing.T)           {}
-func TestExperimentExceptionWithMissingName(t *testing.T)              {}
-func TestExperimentExceptionWithMissingEnabledFlag(t *testing.T)       {}
-func TestExperimentExceptionWithMissingBuckets(t *testing.T)           {}
+func TestExperimentExceptionWithDuplicateExperimentNames(t *testing.T) {
+	assertException(t, "experiment name `duplicate` is not unique", func() {
+		config.Parse([]byte(`{
+            "server":{"port":8080},
+            "experiments":[
+                {
+                    "name":"duplicate",
+                    "enabled":false,
+                    "buckets":[{"name":"everyone","percent":100}]
+                },
+                {
+                    "name":"duplicate",
+                    "enabled":false,
+                    "buckets":[{"name":"everyone","percent":100}]
+                }
+            ]
+        }`))
+	})
+}
 
-func TestExperimentBuckedExceptionWithDuplicateNames(t *testing.T)  {}
-func TestExperimentBucketExceptionWithMissingName(t *testing.T)     {}
-func TestExperimentBucketExceptionWithMissingAudience(t *testing.T) {}
+func TestExperimentExceptionWithMissingName(t *testing.T) {
+	assertException(t, "experiment has missing name", func() {
+		config.Parse([]byte(`{
+            "server":{"port":8080},
+            "experiments":[
+                {
+                    "enabled":false,
+                    "buckets":[{"name":"everyone","percent":100}]
+                }
+            ]
+        }`))
+	})
+}
+func TestExperimentWithMissingEnabledFlagIsDisabled(t *testing.T) {
+	config.Parse([]byte(`{
+        "server":{"port":8080},
+        "experiments":[
+            {
+                "name":"blah",
+                "buckets":[{"name":"everyone","percent":100}]
+            }
+        ]
+    }`))
+
+	if len(config.Experiments) != 0 {
+		t.Error("Experiments should be disabled/omitted by default")
+	}
+}
+func TestExperimentExceptionWithMissingBuckets(t *testing.T) {
+	assertException(t, "experiment `bucketless` has no buckets defined", func() {
+		config.Parse([]byte(`{
+            "server":{"port":8080},
+            "experiments":[
+                {
+                    "name":"bucketless"
+                }
+            ]
+        }`))
+	})
+}
+
+func TestExperimentBuckedExceptionWithDuplicateNames(t *testing.T) {
+	assertException(t, "experiment `bad buckets` has duplicate buckets named `duplicate`", func() {
+		config.Parse([]byte(`{
+            "server":{"port":8080},
+            "experiments":[
+                {
+                    "name":"bad buckets",
+                    "enabled":true,
+                    "buckets":[
+                        {
+                            "name":"duplicate",
+                            "percent":50
+                        },
+                        {
+                            "name":"duplicate",
+                            "percent":50
+                        }
+                    ]
+                }
+            ]
+        }`))
+	})
+}
+func TestExperimentBucketExceptionWithMissingName(t *testing.T) {
+	assertException(t, "experiment `missing bucket name` bucket with missing name", func() {
+		config.Parse([]byte(`{
+            "server":{"port":8080},
+            "experiments":[
+                {
+                    "name":"missing bucket name",
+                    "enabled":false,
+                    "buckets":[{"percent":100}]
+                }
+            ]
+        }`))
+	})
+}
 
 func TestExperimentBucketsExceptionWithNot100PercentCoverage(t *testing.T) {
 	assertException(t, `do not total 100% (actual: 66%)`, func() {
@@ -229,13 +318,11 @@ func TestExperimentBucketsExceptionWithNot100PercentCoverage(t *testing.T) {
                     "buckets":[
                         {
                             "name": "bucket 1",
-                            "percent":33,
-                            "data":{"some data":123}
+                            "percent":33
                         },
                         {
                             "name":"bucket 2",
-                            "percent":33,
-                            "data":"some other data"
+                            "percent":33
                         }
                     ]
                 }

@@ -121,36 +121,32 @@ func TestValidResponse(t *testing.T) {
 	var decoded map[string]json.RawMessage
 
 	json.Unmarshal(response.Body.Bytes(), &decoded)
-    
-    experiments := decoded["experiments"]
 
-    if experiments == nil {
-        t.Errorf("missing all experiments from response")
-    }
-    
-    var decodedExperiments []SelectedExperiment
-    
-    json.Unmarshal(experiments, &decodedExperiments)
-    
-    experiment := decodedExperiments[0]
+	experiments := decoded["experiments"]
 
-    if experiment.Name != "experiment" {
-        t.Errorf("missing experiment from response")
-    }
+	if experiments == nil {
+		t.Errorf("missing all experiments from response")
+	}
 
-    if experiment.Bucket.Name != "bucket" {
-        t.Errorf("missing experiment bucket from response")
-    }
+	var decodedExperiments []SelectedExperiment
 
-    if experiment.Bucket.Data == nil {
-        t.Errorf("missing experiment bucket data from response")
-    }
+	json.Unmarshal(experiments, &decodedExperiments)
 
-    var experimentData []map[string]interface{}
-    
-    json.Unmarshal(*experiment.Bucket.Data, &experimentData)
+	experiment := decodedExperiments[0]
 
-    if experimentData[0]["name"] != "some name" || experimentData[0]["value"] != "some value" {
-        t.Errorf("corrupt experiment bucket data value from response")
-    }
+	if experiment.Name != "experiment" {
+		t.Errorf("missing experiment from response")
+	}
+
+	if experiment.Bucket.Name != "bucket" {
+		t.Errorf("missing experiment bucket from response")
+	}
+
+	if experiment.Bucket.Data == nil {
+		t.Errorf("missing experiment bucket data from response")
+	}
+
+	if experiment.Bucket.Data[0].Name != "some name" || experiment.Bucket.Data[0].Value != "some value" {
+		t.Errorf("corrupt experiment bucket data value from response")
+	}
 }

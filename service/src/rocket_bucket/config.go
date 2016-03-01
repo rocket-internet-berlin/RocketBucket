@@ -18,10 +18,15 @@ type ServerConfig struct {
 	APIKeyMap   map[string]bool
 }
 
+type ConfigBucketData struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type Bucket struct {
-	Name                  string          `json:"name"`
-	Percent               int             `json:"percent"`
-	Data                  json.RawMessage `json:"data"`
+	Name                  string             `json:"name"`
+	Percent               int                `json:"percent"`
+	Data                  []ConfigBucketData `json:"data"`
 	CumulativeProbability int
 }
 
@@ -90,8 +95,22 @@ func (c *Config) DoesURLMatch(requestedURL string) bool {
 
 func (c *Config) tidyExperiments() {
 	var enabledOnlyExperiments []Experiment
+	definedExperimentNames := map[string]bool{}
+
 	for _, experiment := range c.TemporaryExperiments {
 		Info("parsing experiment `%s`...", experiment.Name)
+
+		if experiment.Name == "" {
+			Fatal("experiment has missing name")
+		}
+
+		if definedExperimentNames[experiment.Name] {
+			Fatal("experiment name `%s` is not unique", experiment.Name)
+		} else {
+			definedExperimentNames[experiment.Name] = true
+		}
+
+		c.validateBucketsFor(experiment)
 
 		if experiment.IsEnabled {
 			experiment.Hash = hash(experiment.Name)
@@ -104,14 +123,35 @@ func (c *Config) tidyExperiments() {
 	c.TemporaryExperiments = enabledOnlyExperiments
 }
 
+func (c *Config) validateBucketsFor(experiment Experiment) {
+	definedBucketNames := map[string]bool{}
+
+	if len(experiment.Buckets) == 0 {
+		Fatal("experiment `%s` has no buckets defined", experiment.Name)
+	}
+
+	for _, bucket := range experiment.Buckets {
+		if len(bucket.Name) == 0 {
+			Fatal("experiment `%s` bucket with missing name", experiment.Name)
+		}
+
+		if definedBucketNames[bucket.Name] {
+			Fatal("experiment `%s` has duplicate buckets named `%s`", experiment.Name, bucket.Name)
+		} else {
+			definedBucketNames[bucket.Name] = true
+		}
+	}
+}
+
 func (c *Config) tidyBucketsFor(experiment Experiment) {
 	cumulativePercent := 0
 
 	sort.Sort(experiment.Buckets)
 
 	for i, bucket := range experiment.Buckets {
-		Info("using bucket for experiment `%s`: name=`%s`, percent=%d, data=`%s`",
-			experiment.Name, bucket.Name, bucket.Percent, string(bucket.Data))
+		Info("using bucket for experiment `%s`: name=`%s`, percent=%d",
+			experiment.Name, bucket.Name, bucket.Percent)
+
 		cumulativePercent += bucket.Percent
 		experiment.Buckets[i].CumulativeProbability = cumulativePercent
 	}

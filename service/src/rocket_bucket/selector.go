@@ -1,21 +1,17 @@
 package rocket_bucket
 
-import (
-	"encoding/json"
-)
-
 type Selector struct {
 	Experiments *Experiments
 }
 
 type SelectedExperiment struct {
-    Name string `json:"name"`
-    Bucket SelectedBucket `json:"bucket"`
+	Name   string         `json:"name"`
+	Bucket SelectedBucket `json:"bucket"`
 }
 
 type SelectedBucket struct {
-	Name string           `json:"name"`
-	Data *json.RawMessage `json:"data,omitempty"`
+	Name string             `json:"name"`
+	Data []ConfigBucketData `json:"data,omitempty"`
 }
 
 func (s *Selector) AssignBuckets(userID string) []SelectedExperiment {
@@ -26,16 +22,8 @@ func (s *Selector) AssignBuckets(userID string) []SelectedExperiment {
 		comparableHash := uint64(userIDHash + hash(experiment.Name))
 		for _, bucket := range experiment.Buckets {
 			if uint64(bucket.CumulativeProbability) > (comparableHash % 100) {
-				selectedBucket := SelectedBucket{}
-
-				selectedBucket.Name = bucket.Name
-
-				if bucket.Data != nil {
-					selectedBucket.Data = &bucket.Data
-				}
-
-				selectedExperiments[i] = SelectedExperiment{Name: experiment.Name, Bucket:selectedBucket}
-
+				selectedBucket := SelectedBucket{Name: bucket.Name, Data: bucket.Data}
+				selectedExperiments[i] = SelectedExperiment{Name: experiment.Name, Bucket: selectedBucket}
 				break
 			}
 		}
