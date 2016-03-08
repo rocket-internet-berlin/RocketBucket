@@ -23,8 +23,8 @@ option_parser = OptionParser.new do |opts|
   
   opts.on("-h", "--server-host [hostname]", "Optional host of the bucketing server (default: localhost)") do |v|
     options[:server_host] = v
-  end  
-  
+  end
+    
   opts.on("-h", "--help", "Help") do |v|
     puts opts
     exit
@@ -44,14 +44,16 @@ user_id_count = user_ids.length
 success_count = 0
 benchmark_total = 0.0
 
-server_host = options[:server_host] || 'localhost'
-server_port = server_config["server"]["port"] || raise('Missing port from server->config')
+server = URI.parse(options[:server_host] || 'localhost')
 server_url = server_config["server"]["url"] || '/'
 api_key = (server_config["server"]["api_keys"] || []).first
 
-http = Net::HTTP.new(server_host, server_port)
+http = Net::HTTP.new(server.host, server.port)
+http.use_ssl = server.is_a?(URI::HTTPS)
+
 headers = {}
 headers['X-Api-Key'] = api_key if api_key
+
 longest_bucket_name = 0
 
 (server_config["experiments"] || []).each do |experiment|
@@ -66,8 +68,8 @@ puts "Test parameters:"
 puts "  Server config:   #{options[:server_config_file]}"
 puts "  User ID file:    #{options[:user_id_file]}"
 puts "  User IDs to run: #{user_id_count}"
-puts "  Host:            #{server_host}"
-puts "  Port:            #{server_port}"
+puts "  Host:            #{server.host}"
+puts "  Port:            #{server.port}"
 puts "  URL:             #{server_url}"
 puts "  X-Api-Key:       #{api_key || none}"
 puts "  Start time:      #{Time.now}"
@@ -92,13 +94,14 @@ user_ids.each_with_index do |user_id, i|
       experiments[experiment_name][:got][bucket['name']] += 1
     end
   else
-    raise("Error: `#{response.body}`")
+    raise("Error: `#{@response.body}`")
   end
 end
 
 puts "\nReport:"
-puts "  HTTP time:        #{benchmark_total}"
-puts "  Records bucketed: #{success_count}/#{user_id_count}"
+puts "  Total HTTP time:   #{benchmark_total}"
+puts "  Average HTTP time: #{(benchmark_total.to_f/user_id_count).round(3)}"
+puts "  Records bucketed:  #{success_count}/#{user_id_count}"
 puts "  Experiments:"
 
 experiments.each do |name, buckets|
