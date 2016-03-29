@@ -1,0 +1,6 @@
+to build and upload new version to jcenter
+- update version number at build.gradle for library module. Both for module and ext sections
+- run below gradle commands, at terminal located to project root directory
+ -- ./gradlew clean
+ -- ./gradlew install
+ -- ./gradlew bintrayUpload
