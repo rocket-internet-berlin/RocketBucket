@@ -8,7 +8,7 @@ Source code for the service is all under "./service".
 
 I've included a handy Makefile and an example configuration (config.json.example). `cd service` and run `make run`.
 
-If Go (compatible with 1.4.2) is installed, that would have worked and you can run `curl -H "X-Api-Key: 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" localhost:8080/split?user_id=123` to see the results. If you change the value of the "user_id" parameter a few times, you should see different results.
+If Go (compatible with 1.4 & 1.6) is installed, that would have worked and you can run `curl -H "X-Api-Key: 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" localhost:8080/split?user_id=123` to see the results. If you change the value of the "user_id" parameter a few times, you should see different results.
 
 ## How It Works
 
