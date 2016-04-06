@@ -1,5 +1,6 @@
 .DS_Store
 .tm_properties
+.*.swp
 tmp/
 service/bin/*
 service/pkg/*

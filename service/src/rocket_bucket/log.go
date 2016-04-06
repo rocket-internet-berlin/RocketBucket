@@ -14,10 +14,11 @@ func Error(format string, args ...interface{}) {
 }
 
 func Fatal(format string, args ...interface{}) {
-	doLog("Fatal", format, args...)
-	log.Panicf(format, args...)
+	log.Panic(doLog("Fatal", format, args...))
 }
 
-func doLog(level string, format string, args ...interface{}) {
-	log.Printf(fmt.Sprintf("%s: %s", level, format), args...)
+func doLog(level string, format string, args ...interface{}) string {
+	logMessage := fmt.Sprintf(fmt.Sprintf("%s: %s", level, format), args...)
+	log.Printf(logMessage)
+	return logMessage
 }

@@ -21,7 +21,7 @@ option_parser = OptionParser.new do |opts|
     options[:user_id_file] = v
   end
   
-  opts.on("-h", "--server-host [hostname]", "Optional host of the bucketing server (default: localhost)") do |v|
+  opts.on("-s", "--server-host [hostname]", "Optional host of the bucketing server (default: localhost)") do |v|
     options[:server_host] = v
   end
     
