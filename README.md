@@ -2,7 +2,8 @@
 
 Service and clients to split audiences into buckets based on an arbitrary "user_id".
 
-Source code for the service is all under "./service".
+ * Source code for the service is all under `./service`. Run `make build` to create the executable `./service/bin/bucket_server`. This takes one parameter: the path to a config file.
+ * Source code for the Android client can be found in `./clients/android`.  Execute `./gradlew clean && ./gradlew install && ./gradlew bintrayUpload` to upload to jcenter.
 
 ## Running the Rocket Bucket Service
 
@@ -181,9 +182,21 @@ The guts of this algorithm can be found in service/src/rocket_bucket/selector.go
 
 ## Development Guide
 
-`make test` and all sorts of other gems.
+We're currently tracking desired changes (bugs, tasks, features) [here](https://github.com/rocket-internet-berlin/RocketBucket/issues). Feel free to raise anything you feel should be done in here.
 
-## TODO
-... Client libraries, more documentation... Etc.
+### Service
 
-... Test coverage around various configuration scenarios.
+All code is kept in `./service/src/`. From within `./service/`, you can run `make test` to ensure the code and your environment are compatible. Please try to keep test coverage up, even if it's an integration test added in `./service/src/rocket_bucket/server_test.go`.
+
+ * `./service/src/bucket_server.go` - The source code for the bucket_server executable.
+ * `./service/src/rocket_bucket/*` - All the other source code for the service.
+ * `./service/test_service.rb` - A Ruby script for firing user id's at the service and comparing to the desired result. Useful for performance testing and checking the split is ok.
+
+### Android Client
+
+To build and upload new version to jcenter
+ * Update version number at build.gradle for library module. Both for module and ext sections.
+ * Run below gradle commands, at terminal located to project root directory:
+   * ./gradlew clean
+   * ./gradlew install
+   * ./gradlew bintrayUpload
