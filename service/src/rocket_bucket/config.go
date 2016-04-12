@@ -11,11 +11,12 @@ import (
 const minimumAPIKeyLength = 32
 
 type ServerConfig struct {
-	Port        int      `json:"port"`
-	URL         string   `json:"url"`
-	CacheMaxAge int      `json:"cache_max_age"`
-	APIKeys     []string `json:"api_keys"`
-	APIKeyMap   map[string]bool
+	Port          int      `json:"port"`
+	URL           string   `json:"url"`
+	CacheMaxAge   int      `json:"cache_max_age"`
+	APIKeys       []string `json:"api_keys"`
+	APIKeyMap     map[string]bool
+	BucketDumpURL string
 }
 
 type ConfigBucketData struct {
@@ -26,8 +27,8 @@ type ConfigBucketData struct {
 type Bucket struct {
 	Name                  string             `json:"name"`
 	Percent               int                `json:"percent"`
-	Data                  []ConfigBucketData `json:"data"`
-	CumulativeProbability int
+	Data                  []ConfigBucketData `json:"data,omitempty"`
+	CumulativeProbability int                `json:"-"`
 }
 
 type Buckets []Bucket
@@ -37,7 +38,7 @@ type Experiment struct {
 	Name      string  `json:"name"`
 	IsEnabled bool    `json:"enabled"`
 	Buckets   Buckets `json:"buckets"`
-	Hash      uint32
+	Hash      uint32  `json:"-"`
 }
 
 type Config struct {
@@ -87,10 +88,6 @@ func (c *Config) IsAPIKeyMandatory() bool {
 
 func (c *Config) IsValidAPIKey(possibleKey string) bool {
 	return c.Server.APIKeyMap[possibleKey]
-}
-
-func (c *Config) DoesURLMatch(requestedURL string) bool {
-	return c.tidyURL(requestedURL) == c.Server.URL
 }
 
 func (c *Config) tidyExperiments() {
@@ -175,10 +172,12 @@ func (c *Config) tidyServerConfig() {
 		Fatal("no server port set")
 	}
 
-	if len(c.TemporaryServer.URL) == 0 {
+	if len(c.TemporaryServer.URL) == 0 || c.TemporaryServer.URL == "/" {
 		c.TemporaryServer.URL = "/"
+		c.TemporaryServer.BucketDumpURL = "/all"
 	} else {
 		c.TemporaryServer.URL = c.tidyURL(c.TemporaryServer.URL)
+		c.TemporaryServer.BucketDumpURL = c.TemporaryServer.URL + "/all"
 	}
 
 	if len(c.TemporaryServer.APIKeys) == 0 {

@@ -54,18 +54,6 @@ func TestServerStripTrailingSlashesFromURL(t *testing.T) {
 	}
 }
 
-func TestDoesURLMatch(t *testing.T) {
-	config.Parse([]byte(`{"server":{"port":8080, "url":"/blah"}}`))
-
-	if !config.DoesURLMatch("/blah/") {
-		t.Error("cleaned up urls should match")
-	}
-
-	if config.DoesURLMatch("/wrong/") {
-		t.Error("unmatching urls should not match")
-	}
-}
-
 func TestServerInvalidURL(t *testing.T) {}
 
 func TestServerCacheMaxAge(t *testing.T) {

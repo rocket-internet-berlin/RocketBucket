@@ -9,98 +9,83 @@ import (
 
 type Session struct {
 	StartTime                   time.Time
-	EndTime                     time.Time
 	RemoteAddr                  string
 	ResponseCode                int
 	ResponseBody                []byte
 	PrivateLoggedResponseString string
-	UserID                      string
 	APIKey                      string
 	serverStartupTime           time.Time
+	writer                      http.ResponseWriter
 	request                     *http.Request
 	config                      *Config
-	selector                    *Selector
+	bucketHandler               BucketRequestHandler
 }
 
-func (s *Session) Process(request *http.Request, selector *Selector, config *Config) bool {
+func (s *Session) Process(bucketHandler BucketRequestHandler, writer http.ResponseWriter, request *http.Request, config *Config) {
 	s.StartTime = time.Now()
 	s.RemoteAddr = request.RemoteAddr
-	s.UserID = request.URL.Query().Get("user_id")
 	s.APIKey = request.Header.Get("X-Api-Key")
 
-	s.selector = selector
 	s.config = config
 	s.request = request
+	s.writer = writer
+	s.bucketHandler = bucketHandler
 
-	wasProcessedOk := s.process()
+	s.writeResponse(s.process())
+}
 
-	s.EndTime = time.Now()
+func (s *Session) writeResponse(wasProcessedOk bool) {
+	s.writer.Header().Set("Content-Type", "application/json")
 
-	return wasProcessedOk
+	logString := fmt.Sprintf("processing_time=%.6f, response_code=%d, response_body=`%s`, remote_address=`%s`, query_string=`%s`, x_api_key=`%s`, log_only_response=`%s`",
+		time.Now().Sub(s.StartTime).Seconds(), s.ResponseCode, s.ResponseBody, s.RemoteAddr, s.request.URL, s.APIKey, s.PrivateLoggedResponseString)
+
+	if wasProcessedOk {
+		s.writer.Header().Set("Last-Modified", s.config.LastParsed.Format(time.RFC1123))
+
+		if s.config.Server.CacheMaxAge > 0 {
+			s.writer.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d, must-revalidate", s.config.Server.CacheMaxAge))
+		}
+
+		Info(logString)
+	} else {
+		Error(logString)
+	}
+
+	s.writer.WriteHeader(s.ResponseCode)
+	s.writer.Write(s.ResponseBody)
 }
 
 func (s *Session) process() bool {
-	if s.validateAPIKey() && s.validateRequestPath() && s.validateUserID() {
-		if !s.isModified() || s.assignBucket() {
-			return true
+	if !s.validateAPIKey() {
+		s.ResponseCode = http.StatusForbidden
+		s.ResponseBody, _ = json.Marshal(map[string]interface{}{"error": "Invalid value for X-Api-Key header."})
+		return false
+	} else if !s.isModified() {
+		return true
+	} else {
+		responseBody, statusCode := s.bucketHandler.Handle()
+		jsonBytes, err := json.Marshal(responseBody)
+
+		if err != nil {
+			s.ResponseCode = http.StatusInternalServerError
+			s.ResponseBody = []byte("Something went wrong. Oopsy!")
+			s.PrivateLoggedResponseString = err.Error()
+			return false
 		}
+
+		s.ResponseBody = jsonBytes
+		s.ResponseCode = statusCode
+
+		return true
 	}
-
-	s.ResponseBody, _ = json.Marshal(map[string]interface{}{"error": string(s.ResponseBody)})
-
-	return false
-}
-
-func (s *Session) assignBucket() bool {
-	selectedExperiments := s.selector.AssignBuckets(s.UserID)
-
-	jsonBytes, err := json.Marshal(map[string]interface{}{"experiments": selectedExperiments})
-
-	if err != nil {
-		s.ResponseCode = http.StatusInternalServerError
-		s.ResponseBody = []byte("Something went wrong. Oopsy!")
-		s.PrivateLoggedResponseString = err.Error()
-		return false
-	}
-
-	s.ResponseBody = jsonBytes
-	s.ResponseCode = http.StatusOK
-
-	return true
-}
-
-func (s *Session) validateRequestPath() bool {
-	if !s.config.DoesURLMatch(s.request.URL.Path) {
-		s.ResponseCode = http.StatusNotFound
-		s.ResponseBody = []byte(fmt.Sprintf("Unknown path %s", s.request.URL.Path))
-		return false
-	}
-
-	return true
 }
 
 func (s *Session) validateAPIKey() bool {
 	if !s.config.IsAPIKeyMandatory() {
 		return true
 	}
-
-	if s.APIKey == "" || !s.config.IsValidAPIKey(s.APIKey) {
-		s.ResponseCode = http.StatusForbidden
-		s.ResponseBody = []byte("Invalid value for X-Api-Key header.")
-		return false
-	}
-
-	return true
-}
-
-func (s *Session) validateUserID() bool {
-	if s.UserID != "" {
-		return true
-	}
-
-	s.ResponseCode = http.StatusBadRequest
-	s.ResponseBody = []byte("user_id must be set")
-	return false
+	return s.config.IsValidAPIKey(s.APIKey)
 }
 
 func (s *Session) isModified() bool {
