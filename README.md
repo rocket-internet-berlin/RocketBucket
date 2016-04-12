@@ -54,7 +54,7 @@ This call can be made for each user. It takes a "user_id" CGI parameter (to dict
 `curl -H "X-Api-Key: 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" localhost:8080/split?user_id=123`
 
 #### Example response:
-`
+```json
 {
    "experiments":[
       {
@@ -83,7 +83,7 @@ This call can be made for each user. It takes a "user_id" CGI parameter (to dict
       }
    ]
 }
-`
+```
 
 ### Dumping All Buckets
 
@@ -93,7 +93,7 @@ It can be helpful to know what experiments are currently running in order to pro
 `curl -H "X-Api-Key: 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" localhost:8080/split/all`
 
 #### Example response:
-`
+```json
 {
    "experiments":[
       {
@@ -154,7 +154,7 @@ It can be helpful to know what experiments are currently running in order to pro
       }
    ]
 }
-`
+```
 
 Note that empty fields (e.g. undefined "data") and disabled (enabled:false) experiments will be omitted.
 
