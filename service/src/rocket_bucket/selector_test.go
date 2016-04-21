@@ -19,8 +19,8 @@ func randStringBytes(n int) string {
 
 func assertAudienceSizeWithinDeviation(t *testing.T, actual int, expected int) {
 	expectedFloat := float64(expected)
-	maxExpected := int(math.Ceil(expectedFloat + (expectedFloat * 0.05)))
-	minExpected := int(math.Floor(expectedFloat - (expectedFloat * 0.05)))
+	maxExpected := int(math.Ceil(expectedFloat + (expectedFloat * 0.1)))
+	minExpected := int(math.Floor(expectedFloat - (expectedFloat * 0.1)))
 
 	if actual < minExpected || actual > maxExpected {
 		t.Errorf("expected %d-%d, got %d", minExpected, maxExpected, actual)
@@ -76,7 +76,7 @@ func TestBucketing(t *testing.T) {
 
 	bucketCounter := map[string]map[string]int{}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10000; i++ {
 		someUserID := randStringBytes(15)
 		selectedExperiments := selector.AssignBuckets(someUserID)
 		for _, experiment := range selectedExperiments {
@@ -88,13 +88,23 @@ func TestBucketing(t *testing.T) {
 		}
 	}
 
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 1"], 50)
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 2"], 35)
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 3"], 15)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 1"], 5000)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 2"], 3500)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 1"]["bucket 3"], 1500)
 
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 1"], 15)
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 2"], 35)
-	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 3"], 50)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 1"], 1500)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 2"], 3500)
+	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 3"], 5000)
+}
+
+func TestOverflowStillConsistent(t *testing.T) {
+	// this test is to try and ensure that whatever version of go we use, the overflow
+	// behavior remains unchanged. sort of silly to write a test for go but this is
+	// central to how bucketing works so ensuring it remains persistent is important.
+	x, y := uint32(3576803822), uint32(1808322892)
+	if x*y != 1492394152 {
+		t.Errorf("expected %d*%d == %d", x, y, 1492394152)
+	}
 }
 
 func BenchmarkBucketingfunc(b *testing.B) {

@@ -9,6 +9,7 @@ require "benchmark"
 
 options = {}
 experiments = {}
+bucket_distribution = {}
 
 option_parser = OptionParser.new do |opts|
   opts.banner = "Usage: test_service.rb --server-config=<server config file> --user-ids=<file of user ids> [--server-host=<hostname>]"
@@ -82,6 +83,8 @@ user_ids.each_with_index do |user_id, i|
   
   puts "#{Time.now} (#{i+1}/#{user_id_count}) user_id=`#{user_id}` response_code=#{@response.code}"
   
+  bucket_combination = []
+
   if @response.code.to_i == 200
     success_count += 1
     JSON.parse(@response.body)['experiments'].each do |experiment|
@@ -92,16 +95,22 @@ user_ids.each_with_index do |user_id, i|
       experiments[experiment_name][:total] += 1
       experiments[experiment_name][:got][bucket['name']] ||= 0
       experiments[experiment_name][:got][bucket['name']] += 1
+
+      bucket_combination << "#{experiment_name} (#{bucket['name']})"
     end
+
+    bucket_combination_string = bucket_combination.sort.join(', ')
+    bucket_distribution[bucket_combination_string] ||= 0
+    bucket_distribution[bucket_combination_string] += 1
   else
     raise("Error: `#{@response.body}`")
   end
 end
 
 puts "\nReport:"
-puts "  Total HTTP time:   #{benchmark_total}"
-puts "  Average HTTP time: #{(benchmark_total.to_f/user_id_count).round(3)}"
-puts "  Records bucketed:  #{success_count}/#{user_id_count}"
+puts "  Total HTTP time:     #{benchmark_total}"
+puts "  Average HTTP time:   #{(benchmark_total.to_f/user_id_count).round(3)}"
+puts "  Records bucketed:    #{success_count}/#{user_id_count}"
 puts "  Experiments:"
 
 experiments.each do |name, buckets|
@@ -113,4 +122,9 @@ experiments.each do |name, buckets|
     aligned_name = "`#{name}`".ljust(longest_bucket_name+3)
     puts "      #{aligned_name} got:#{got_percent} (#{buckets[:got][name]}) expected:#{buckets[:expected][name]} diff:#{(diff >= 0 ? '+' : '')+diff.to_s}"
   end
+end
+
+puts "  Bucket distribution: "
+bucket_distribution.each do |bucket_combination_string, count|
+  puts "    #{count} #{bucket_combination_string}"
 end

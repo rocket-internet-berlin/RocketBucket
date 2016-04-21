@@ -28,7 +28,7 @@ type Bucket struct {
 	Name                  string             `json:"name"`
 	Percent               int                `json:"percent"`
 	Data                  []ConfigBucketData `json:"data,omitempty"`
-	CumulativeProbability int                `json:"-"`
+	CumulativeProbability uint32             `json:"-"`
 }
 
 type Buckets []Bucket
@@ -150,7 +150,7 @@ func (c *Config) tidyBucketsFor(experiment Experiment) {
 			experiment.Name, bucket.Name, bucket.Percent)
 
 		cumulativePercent += bucket.Percent
-		experiment.Buckets[i].CumulativeProbability = cumulativePercent
+		experiment.Buckets[i].CumulativeProbability = uint32(cumulativePercent)
 	}
 
 	if cumulativePercent != 100 {

@@ -19,9 +19,15 @@ func (s *Selector) AssignBuckets(userID string) []SelectedExperiment {
 	userIDHash := hash(userID)
 
 	for i, experiment := range *s.Experiments {
-		comparableHash := uint64(userIDHash + hash(experiment.Name))
+		// Stupid or smart...
+		// Overflow a uint32 to generate a pseudo-random number based on the
+		// user id and the experiment name. After much testing this seems to better distribute
+		// users into buckets by reducing overlap where experiment.Name%100 is the same
+		// for multiple experiments.
+		// This overflow behavior is specified here: https://golang.org/ref/spec#Integer_overflow
+		comparableHash := userIDHash * hash(experiment.Name)
 		for _, bucket := range experiment.Buckets {
-			if uint64(bucket.CumulativeProbability) > (comparableHash % 100) {
+			if bucket.CumulativeProbability > (comparableHash % 100) {
 				selectedBucket := SelectedBucket{Name: bucket.Name, Data: bucket.Data}
 				selectedExperiments[i] = SelectedExperiment{Name: experiment.Name, Bucket: selectedBucket}
 				break
