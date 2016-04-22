@@ -35,10 +35,11 @@ type Buckets []Bucket
 type Experiments []Experiment
 
 type Experiment struct {
-	Name      string  `json:"name"`
-	IsEnabled bool    `json:"enabled"`
-	Buckets   Buckets `json:"buckets"`
-	Hash      uint32  `json:"-"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	IsEnabled   bool    `json:"enabled"`
+	Buckets     Buckets `json:"buckets"`
+	Hash        uint32  `json:"-"`
 }
 
 type Config struct {

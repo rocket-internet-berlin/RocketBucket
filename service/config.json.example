@@ -10,6 +10,7 @@
     "experiments":[
         {
             "name":"checkout button colors",
+            "description":"testing whether different color buttons get pressed more",
             "enabled":true,
             "buckets":[
                 {
@@ -31,6 +32,7 @@
         },
         {
             "name":"search call to action",
+            "description":"brian's test to find out if shouting is more effective",
             "enabled":true,
             "buckets":[
                 {

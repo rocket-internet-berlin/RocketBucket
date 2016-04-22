@@ -27,6 +27,7 @@ func buildRequest(header http.Header) (Server, *httptest.ResponseRecorder, *http
         "experiments":[
             {
                 "name":"experiment",
+                "description":"description",
                 "enabled":true,
                 "buckets":[
                     {
@@ -145,6 +146,10 @@ func TestValidResponse(t *testing.T) {
 		t.Errorf("missing experiment from response")
 	}
 
+	if experiment.Description != "description" {
+		t.Errorf("missing experiment description")
+	}
+
 	if experiment.Bucket.Name != "bucket 1" {
 		t.Errorf("missing experiment bucket from response")
 	}
@@ -180,6 +185,10 @@ func TestDumpAllVariants(t *testing.T) {
 	// ASSERT EXPERIMENT CONTENT
 	if experiment.Name != "experiment" {
 		t.Errorf("returned experiment name is not correct")
+	}
+
+	if experiment.Description != "description" {
+		t.Errorf("returned experiment description is not correct")
 	}
 
 	if experiment.Buckets[0].Name != "bucket 1" {

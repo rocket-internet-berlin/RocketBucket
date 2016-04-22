@@ -5,8 +5,9 @@ type Selector struct {
 }
 
 type SelectedExperiment struct {
-	Name   string         `json:"name"`
-	Bucket SelectedBucket `json:"bucket"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Bucket      SelectedBucket `json:"bucket"`
 }
 
 type SelectedBucket struct {
@@ -29,7 +30,7 @@ func (s *Selector) AssignBuckets(userID string) []SelectedExperiment {
 		for _, bucket := range experiment.Buckets {
 			if bucket.CumulativeProbability > (comparableHash % 100) {
 				selectedBucket := SelectedBucket{Name: bucket.Name, Data: bucket.Data}
-				selectedExperiments[i] = SelectedExperiment{Name: experiment.Name, Bucket: selectedBucket}
+				selectedExperiments[i] = SelectedExperiment{Name: experiment.Name, Description: experiment.Description, Bucket: selectedBucket}
 				break
 			}
 		}

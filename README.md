@@ -29,6 +29,7 @@ Everything is set up in 1 JSON configuration file. It has the following structur
 * `experiments` (array of objects): this contains an array of the following objects
   * _experiment_ (object): an experiment.
     * `name` (string): the name of the experiment. Once set and being used, it should not be changed as it, along with the user_id in the URL, is used to bucket a user.
+    * `description` (string, optional, default ""): human-readable description of the experiment.
     * `enabled` (bool, optional, default *false*): whether this experiment is enabled. If disabled, the bucket_server will not list it when requested. Keeping disabled experiments may be useful for historic purposes.
     * `buckets` (array of objects): These are the buckets into which users will be arbitrarily (but consistently) placed. The contain pertinent details about the bucket size & other data.
       * `name` (string): the name of the bucket.
@@ -62,6 +63,7 @@ This call can be made for each user. It takes a "user_id" CGI parameter (to dict
    "experiments":[
       {
          "name":"checkout button colors",
+         "description":"testing whether different color buttons get pressed more",
          "bucket":{
             "name":"control group (green button)",
             "data":[
@@ -74,6 +76,7 @@ This call can be made for each user. It takes a "user_id" CGI parameter (to dict
       },
       {
          "name":"search call to action",
+         "description":"brian's test to find out if shouting is more effective",
          "bucket":{
             "name":"all caps craziness",
             "data":[
@@ -101,15 +104,16 @@ It can be helpful to know what experiments are currently running in order to pro
    "experiments":[
       {
          "name":"checkout button colors",
+         "description":"testing whether different color buttons get pressed more",
          "enabled":true,
          "buckets":[
             {
-               "name":"variant (red button)",
-               "percent":25,
+               "name":"control group (green button)",
+               "percent":50,
                "data":[
                   {
                      "name":"color",
-                     "value":"#FF0000"
+                     "value":"#00FF00"
                   }
                ]
             },
@@ -124,12 +128,12 @@ It can be helpful to know what experiments are currently running in order to pro
                ]
             },
             {
-               "name":"control group (green button)",
-               "percent":50,
+               "name":"variant (red button)",
+               "percent":25,
                "data":[
                   {
                      "name":"color",
-                     "value":"#00FF00"
+                     "value":"#FF0000"
                   }
                ]
             }
@@ -137,12 +141,9 @@ It can be helpful to know what experiments are currently running in order to pro
       },
       {
          "name":"search call to action",
+         "description":"brian's test to find out if shouting is more effective",
          "enabled":true,
          "buckets":[
-            {
-               "name":"control group (current)",
-               "percent":50
-            },
             {
                "name":"all caps craziness",
                "percent":50,
@@ -152,6 +153,10 @@ It can be helpful to know what experiments are currently running in order to pro
                      "value":"CLICK HERE!!!"
                   }
                ]
+            },
+            {
+               "name":"control group (current)",
+               "percent":50
             }
          ]
       }
@@ -163,13 +168,13 @@ Note that empty fields (e.g. undefined "data") and disabled (enabled:false) expe
 
 ## How The Service Works
 
-The bucket_server is stateless. It stores no data nor does it access any whilst running. It uses an algorithm to calculate it's results based on the user_id and names of available experiments. The result of this is returned as JSON containing all the experiments and buckets a user is eligible for. This can then be cached by the client.
+The bucket_server is stateless. It stores no data nor does it access any whilst running. It uses an algorithm to calculate it's results based on the user_id and names of available experiments and their buckets. The result of this is returned as JSON containing all the experiments and buckets a user is eligible for. This can then be cached by the client.
 
-During the bucket_server startup, it parses the experiment data from the config file and calculates a hash of the experiment name, resulting in a 32 bit number. It orders the buckets by smallest to largest and accumulates the percentages. All this is kept in memory and used at the time of an HTTP request.
+During the bucket_server startup, it parses the experiment data from the config file and calculates a hash of the experiment name, resulting in a 32 bit number. It then accumulates the percentages of each bucket. All this is kept in memory and used at the time of an HTTP request.
 
-When an HTTP request is made to the bucket_server, a user_id parameter must be passed from the client. Like each experiment name, a hash is taken of the user_id and the experiment name hash and user_id hash are added together (`hash(user_id) + hash(experiment name)`). Each experiment and each of it's buckets are then looped through and user/experiment name combination are assigned to a bucket.
+When an HTTP request is made to the bucket_server, a user_id parameter must be passed from the client. A hash is taken of the user_id which is multiplied by the experiment name hash (`hash(user_id) * hash(experiment name)`). This creates a big number that may (intentionally) overflow, resulting in a pseudo-random number. Doing so causes a healthy random spread of users between buckets. Each experiment and it's buckets are then looped through and user/experiment name combination are assigned to a bucket.
 
-It's very important to keep in mind that the user_id and experiment name are used in combination. If you change the user_id OR the experiment name, the results from the bucket_server may change. This is intentional. While using the user_id for bucketing is obvious, the reason for using the experiment name is more subtle. If you imagine the follwing experiment setup:
+It's very important to keep in mind that the user_id, experiment name and bucket name are used to determine how a user is bucketed. Changing any of these values will change the result from the bucket_server. This is desirable for user_id, of course, but you should avoid changing experiment or bucket names once an experiment is launched. While using the user_id for bucketing is obvious, the reason for using the experiment name is more subtle. If you imagine the follwing experiment setup:
 
 1. An experiment for checkout button color:
   1. 50% of users see a RED button.

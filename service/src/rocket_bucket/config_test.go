@@ -123,6 +123,7 @@ func TestExperimentFullExperimentData(t *testing.T) {
         "experiments":[
             {
                 "name":"experiment 1",
+                "description":"some description",
                 "enabled":true,
                 "buckets":[
                     {
@@ -151,6 +152,10 @@ func TestExperimentFullExperimentData(t *testing.T) {
 
 	if config.Experiments[0].Name != "experiment 1" {
 		t.Error("experiment name unmatched")
+	}
+
+	if config.Experiments[0].Description != "some description" {
+		t.Error("description name unmatched")
 	}
 
 	if len(config.Experiments[0].Buckets) != 3 {
