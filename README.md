@@ -4,8 +4,8 @@ Service and clients to split audiences into buckets based on an arbitrary "user_
 
  * Source code for the service is all under `./service`. Run `make build` to create the executable `./service/bin/bucket_server`. This takes one parameter: the path to a config file.
  * Source code for the Android client can be found in `./clients/android`.  Execute `./gradlew clean && ./gradlew install && ./gradlew bintrayUpload` to upload to jcenter.
- 
-This was built as a joint effort between [Rocket Internet](https://www.rocket-internet.com/) and [LYKE](https://www.lyke.co.id/).
+
+The service was built by [Rocket Internet](https://www.rocket-internet.com/). The Android client, many hours of development and early adoption provided by [LYKE](https://www.lyke.co.id/) ([who are awesome!!](https://lyke.workable.com/)).
 
 ## Running the Rocket Bucket Service
 
