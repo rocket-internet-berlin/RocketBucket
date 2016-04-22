@@ -131,13 +131,13 @@ func TestExperimentFullExperimentData(t *testing.T) {
                         "data":[{"name":"some data","value":"some value"}]
                     },
                     {
-                        "name":"bucket 2",
-                        "percent":50,
+                        "name":"bucket 3",
+                        "percent":30,
                         "data":[{"name":"some other data","value":"some other value"}]
                     },
                     {
-                        "name":"bucket 3",
-                        "percent":30
+                        "name":"bucket 2",
+                        "percent":50
                     }
                 ]
             },
@@ -158,14 +158,18 @@ func TestExperimentFullExperimentData(t *testing.T) {
 	}
 
 	if config.Experiments[0].Buckets[0].Name != "bucket 1" {
-		t.Error("first bucket name should be smallest bucket")
+		t.Error("first bucket name should be alphabetically lowest")
+	}
+
+	if config.Experiments[0].Buckets[2].Name != "bucket 3" {
+		t.Error("last bucket name should be alphabetically highest")
 	}
 
 	if config.Experiments[0].Buckets[0].CumulativeProbability != 20 {
 		t.Errorf("first bucket has lowest cumumulative probability (expected 20, got %d)", config.Experiments[0].Buckets[0].CumulativeProbability)
 	}
 
-	if config.Experiments[0].Buckets[1].CumulativeProbability != 50 {
+	if config.Experiments[0].Buckets[1].CumulativeProbability != 70 {
 		t.Errorf("middle bucket has mid cumumulative probability (expected 50, got %d)", config.Experiments[0].Buckets[1].CumulativeProbability)
 	}
 

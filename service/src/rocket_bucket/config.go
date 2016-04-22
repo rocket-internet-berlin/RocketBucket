@@ -54,7 +54,7 @@ func (slice Buckets) Len() int {
 }
 
 func (slice Buckets) Less(i, j int) bool {
-	return slice[j].Percent > slice[i].Percent
+	return slice[j].Name > slice[i].Name
 }
 
 func (slice Buckets) Swap(i, j int) {

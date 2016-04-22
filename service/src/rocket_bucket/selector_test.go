@@ -1,9 +1,10 @@
 package rocket_bucket
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"testing"
 )
 
@@ -24,6 +25,47 @@ func assertAudienceSizeWithinDeviation(t *testing.T, actual int, expected int) {
 
 	if actual < minExpected || actual > maxExpected {
 		t.Errorf("expected %d-%d, got %d", minExpected, maxExpected, actual)
+	}
+}
+
+func assertUsersAreBucketed(t *testing.T, percentOne int, percentTwo int, expectedOne []int, expectedTwo []int) {
+	config := Config{}
+
+	config.Parse([]byte(fmt.Sprintf(`{
+        "server":{"port":8080},
+        "experiments":[
+            {
+                "name":"experiment",
+                "enabled":true,
+                "buckets":[
+                    {
+                        "name": "1",
+                        "percent":%d
+                    },
+                    {
+                        "name":"2",
+                        "percent":%d
+                    }
+                ]
+            }
+        ]
+    }`, percentOne, percentTwo)))
+
+	selector := Selector{Experiments: &config.Experiments}
+
+	gotBucket := make(map[string][]int)
+
+	for i := 0; i < 10; i++ {
+		selectedExperiments := selector.AssignBuckets(string(i))
+		gotBucket[selectedExperiments[0].Bucket.Name] = append(gotBucket[selectedExperiments[0].Bucket.Name], i)
+	}
+
+	if len(expectedOne) > 0 && !reflect.DeepEqual(expectedOne, gotBucket["1"]) {
+		t.Errorf("Bucket 1 does not match. Expected: %v, got: %v", expectedOne, gotBucket["1"])
+	}
+
+	if len(expectedTwo) > 0 && !reflect.DeepEqual(expectedTwo, gotBucket["2"]) {
+		t.Errorf("Bucket 2 does not match. Expected: %v, got: %v", expectedTwo, gotBucket["2"])
 	}
 }
 
@@ -95,6 +137,16 @@ func TestBucketing(t *testing.T) {
 	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 1"], 1500)
 	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 2"], 3500)
 	assertAudienceSizeWithinDeviation(t, bucketCounter["experiment 2"]["bucket 3"], 5000)
+}
+
+func TestUsersNeverMoveOutOfGrowingBucket(t *testing.T) {
+	assertUsersAreBucketed(t, 0, 100, []int{}, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	assertUsersAreBucketed(t, 25, 75, []int{0, 3, 9}, []int{1, 2, 4, 5, 6, 7, 8})
+	assertUsersAreBucketed(t, 50, 50, []int{0, 1, 3, 9}, []int{2, 4, 5, 6, 7, 8})
+	assertUsersAreBucketed(t, 75, 25, []int{0, 1, 3, 6, 7, 9}, []int{2, 4, 5, 8})
+	assertUsersAreBucketed(t, 25, 75, []int{0, 3, 9}, []int{1, 2, 4, 5, 6, 7, 8})
+	assertUsersAreBucketed(t, 100, 0, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, []int{})
+
 }
 
 func TestOverflowStillConsistent(t *testing.T) {
