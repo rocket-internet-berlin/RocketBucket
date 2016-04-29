@@ -36,6 +36,7 @@ public class NetworkTask implements com.squareup.okhttp.Callback {
     private final int MAX_RETRY_COUNT = 5;
 
     private static OkHttpClient client;
+    private final Request request;
     private final NetworkTaskCallback callBack;
     private int trailsCount;
 
@@ -67,14 +68,12 @@ public class NetworkTask implements com.squareup.okhttp.Callback {
             }*/
         }
 
-     try {
-         Request request = new Request.Builder()
-                 .url(url)
-                 .header(HTTP_HEADER_API_KEYE, apiKey).build();
-         client.newCall(request).enqueue(this);
-     }catch (Exception e){
-         e.printStackTrace();
-     }
+
+        this.request = new Request.Builder()
+                .url(url)
+                .header(HTTP_HEADER_API_KEYE, apiKey).build();
+
+        client.newCall(this.request).enqueue(this);
     }
 
     @Override
