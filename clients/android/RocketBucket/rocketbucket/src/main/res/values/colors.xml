@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bucket_button_color">#80ff3333</color>
+    <color name="bucket_background_color">#f7f7f7</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
