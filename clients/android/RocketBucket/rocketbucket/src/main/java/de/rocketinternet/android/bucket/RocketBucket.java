@@ -1,137 +1,161 @@
 package de.rocketinternet.android.bucket;
 
 import android.content.Context;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.models.Bucket;
+
 /**
  * @author Sameh Gerges
  */
-public class RocketBucket {
+public class RocketBucket implements BucketsContainer{
 
     static final String TAG = RocketBucket.class.getSimpleName();
 
-    private static boolean isDebug;
-
+    private static boolean sIsDebug;
+    public static Config CONFIG;
     public static final String VARIANT_NAME_DEFAULT = "default_variant";
-    private static final Variant VARIANT_DEFAULT = new Variant(VARIANT_NAME_DEFAULT);
-    private static RocketBucket self;
+    private static final Bucket BUCKET_BASE_DEFAULT = new Bucket(VARIANT_NAME_DEFAULT);
 
-    private final Map<String, Variant> experimentMap;
+    private static RocketBucket sSelf;
 
-    @Nullable private final RocketBucketContainer container;
+    private final Map<String, Bucket> mExperimentMap = new HashMap<>();
+    private final BucketsProvider bucketsProvider;
+    @Nullable private final RocketBucketContainer mContainer;
 
-    private RocketBucket(@Nullable RocketBucketContainer container){
-        this.experimentMap = new HashMap<>();
-        this.container = container;
+
+    RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
+        CONFIG = new Config(apiKey, endpoint);
+
+        this.bucketsProvider = bucketsProvider;
+        this.mContainer = container;
     }
 
-    static RocketBucket getInstance(){
-        if (self == null) {
-            throw new RuntimeException("Rocket Bucket is not initialized, please make sure to call initialize function");
-        }
-        return self;
-    }
+    private void updateExperimentList(Map<String, Bucket> results) {
+        mExperimentMap.clear();
+        mExperimentMap.putAll(results);
 
-    public static boolean isDebug() {
-        return isDebug;
-    }
-
-    public static void setIsDebug(boolean isDebug) {
-        RocketBucket.isDebug = isDebug;
-    }
-
-    private void updateExperimentList(Map<String, Variant> results){
-        experimentMap.clear();
-        experimentMap.putAll(results);
-
-        if (container != null){
+        if (mContainer != null) {
             Map<String, String> experiments = new HashMap<>();
             for (String experimentName : results.keySet()) {
                 experiments.put(experimentName, getVariantName(experimentName));
             }
-
-            container.onExperimentDataReady(experiments);
+            mContainer.onExperimentDataReady(experiments);
         }
     }
 
-    private Variant getVariant(@NonNull String experimentName){
-        return experimentMap.containsKey(experimentName)? experimentMap.get(experimentName) : VARIANT_DEFAULT;
+    Bucket getVariant(@NonNull String experimentName) {
+        return mExperimentMap.containsKey(experimentName) ? mExperimentMap.get(experimentName) : BUCKET_BASE_DEFAULT;
     }
 
-    void onUnexpectedError(Throwable t){
+    void onUnexpectedError(Throwable t) {
         Log.w(TAG, t.getMessage(), t);
 
-        if (container != null) {
-            container.onUnexpectedError(t);
+        if (mContainer != null) {
+            mContainer.onUnexpectedError(t);
         }
     }
 
-    private static String getDeviceId(Context context){
+    public Map<String, Bucket> getCurrentExperiments() {
+        return mExperimentMap;
+    }
 
-        /*String deviceId = null;
-
-        try {
-            String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-            if (androidId != null & androidId.length() > 1) {
-                Long.valueOf(androidId.substring(0, 1), 16);
-                deviceId = androidId;
-            }
-        } catch (NumberFormatException ex) {
-            //Exception ignored as it can happen as result of known bug on some devices that have android id as string represents model name or something else.
+    public static void initialize(@NonNull Context context, @NonNull String endpoint, @NonNull String apiKey, @Nullable RocketBucketContainer container, boolean
+            isDebug) {
+        if ((apiKey == null || apiKey.isEmpty()) || (endpoint == null || endpoint.isEmpty())) {
+            throw new IllegalStateException("endpoint and api key cannot be null! or empty");
         }
-
-        if (deviceId == null) {
-            TelephonyManager telephony = (TelephonyManager) context.getSystemService(Context.TELECOM_SERVICE);
-            deviceId = telephony.getDeviceId();
-        }*/
-        return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-    }
-
-    public static void initialize(@NonNull Context context, @NonNull String endpoint, @NonNull String apiKey, @Nullable RocketBucketContainer container) {
-        self = new RocketBucket(container);
-
-        NetworkTask.updateLatestBucket(context, endpoint, apiKey, getDeviceId(context), new NetworkTask.SuccessCallback<Map<String, Variant>>() {
-            @Override
-            public void onSuccess(Map<String, Variant> response) {
-                getInstance().updateExperimentList(response);
+        if (sSelf == null) {
+            RocketBucket.sIsDebug = isDebug;
+            BucketsProvider bucketsProvider;
+            if (isDebug) {
+                bucketsProvider = new EditableBucketsProvider();
+            } else {
+                bucketsProvider = new BucketProviderImpl();
             }
-        });
+            synchronized (RocketBucket.class) {
+                if (sSelf == null) {
+                    sSelf = new RocketBucket(endpoint, apiKey, bucketsProvider, container);
+                }
+            }
+        }
+        sSelf.updateLatestBuckets(context);
+
+
     }
 
-    public static String getVariantName(@NonNull String experimentName){
+    void updateLatestBuckets(final Context context) {
+        bucketsProvider.loadBuckets(context, this);
+    }
+
+    public static String getVariantName(@NonNull String experimentName) {
         return getInstance().getVariant(experimentName).getName();
     }
 
-    public static String getVariantValue(@NonNull String experimentName, String key, String defaultValue){
+    public String getVariantValue(@NonNull String experimentName, String key, String defaultValue) {
         return getInstance().getVariant(experimentName).getValue(key, defaultValue);
     }
 
-    static class Variant{
-        private String name;
-        private Map<String, String> data;
+    @VisibleForTesting
+    public static void killTheBucket() {
+        sSelf = null;
+    }
 
-        public Variant(String name) {
-            this.data = new HashMap<>();
-            this.name = name;
+    static RocketBucket getInstance() {
+        if (sSelf == null) {
+            throw new IllegalStateException("Rocket BucketBase is not initialized, please make sure to call initialize function");
+        }
+        return sSelf;
+    }
+
+    public static boolean isDebug() {
+        return sIsDebug;
+    }
+
+    public static void setIsDebug(boolean isDebug) {
+        RocketBucket.sIsDebug = isDebug;
+    }
+
+    @Override
+    public void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error) {
+        if (buckets != null) {
+            updateExperimentList(buckets);
+        } else if (error != null) {
+            onUnexpectedError(error);
+        }
+    }
+
+    @Override
+    public void updateBucket(Context context, String experimentName, Bucket bucket) {
+        mExperimentMap.put(experimentName, bucket);
+    }
+
+    public BucketsProvider getBucketsProvider() {
+        return bucketsProvider;
+    }
+
+
+    public static class Config {
+        private String mEndpoint;
+        private String mApiKey;
+
+        public Config(String apiKey, String endpoint) {
+            this.mApiKey = apiKey;
+            this.mEndpoint = endpoint;
         }
 
-        public Variant(String name, @NonNull Map<String, String> data) {
-            this.data = data;
-            this.name = name;
+        public String getApiKey() {
+            return mApiKey;
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public String getValue(String key, String defaultValue){
-            return data.containsKey(key)? data.get(key) : defaultValue;
+        public String getEndpoint() {
+            return mEndpoint;
         }
     }
 }

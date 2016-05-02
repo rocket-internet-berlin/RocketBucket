@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="defaultBucketDetailsMargin">10dp</dimen>
+    <dimen name="defaultBucketItemMargin">16dp</dimen>
+    <dimen name="defaultBucketItemTextSize">15sp</dimen>
+</resources>

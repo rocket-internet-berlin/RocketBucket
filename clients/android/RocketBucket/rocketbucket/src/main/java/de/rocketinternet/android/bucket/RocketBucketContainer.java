@@ -12,6 +12,5 @@ public interface RocketBucketContainer {
      */
     void onUnexpectedError(Throwable t);
 
-
-    void onExperimentDataReady(Map<String, String> activeExperiments);
+    void onExperimentDataReady(Map<String, String> experiments);
 }

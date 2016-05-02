@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">RocketBucket</string>
+    <string name="generic_save">Save</string>
+    <string name="experiment_automatic">Automatic</string>
+    <string name="experiment_automatic_withValue">Automatic (%1$s)</string>
+    <string name="experiment_mannual">Manual</string>
+    <string name="bucket_item_experimentName">Experiment Name : %1$s</string>
+    <string name="bucket_item_selectedBucket">Selected Bucket : %1$s</string>
+    <string name="bucket_item_selectionMode">Selection Mode : %1$s</string>
 </resources>
