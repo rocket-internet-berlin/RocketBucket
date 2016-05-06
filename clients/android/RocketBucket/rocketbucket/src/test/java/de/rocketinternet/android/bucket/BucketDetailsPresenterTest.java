@@ -1,10 +1,17 @@
 package de.rocketinternet.android.bucket;
 
 import android.content.Context;
+import android.content.Intent;
 
+import org.junit.After;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
 
 /**
  * Unit test for the implementation of {@link BucketDetailsPresenter}
@@ -12,7 +19,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BucketDetailsPresenterTest{
     @Mock Context mContext;
-  /*  BucketDetailsPresenter mPresenter;
+    BucketDetailsPresenter mPresenter;
     @Mock BucketDetailsContract.View mViewController;
 
 
@@ -28,52 +35,52 @@ public class BucketDetailsPresenterTest{
     public void testOnUnexpectedError() throws Exception {
 
     }
-
-    @Test
-    public void testOnExperimentDataReady_givenExperimentName_PresenterShouldSetTheName() throws Exception {
-        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
-        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
-        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
-        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
-        assertEquals(mPresenter.getCurrentExperimentName(), MockBuilder.getDefaultExpName());
-
-    }
-
-    @Test
-    public void testOnExperimentDataReady_givenCurrentExpirment_PresenterShouldHaveCurrentExpirment() throws Exception {
-        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
-        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
-        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
-        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
-        assertNotNull(mPresenter.getCurrentExperiment());
-    }
-
-    @Test
-    public void testOnExperimentDataReady_firstInitialization_selectionModeShouldBeAutomaticByDefault() throws Exception {
-        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
-        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
-        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
-        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
-        assertFalse(mPresenter.isManualExpirment());
-    }
-
-    @Test
-    public void testOnExperimentDataReady_selectionModeAutomatic_shouldAskUIToMakeItAutomatic() throws Exception {
-        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
-        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
-        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
-        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
-        verify(mViewController).updateSelectionMethod(eq(false), anyString());
-    }
-
-    @Test
-    public void testOnExperimentDataReady_selectedVarientAreFrist_shouldLocatePositionZeroOnTheSpinner() throws Exception {
-        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
-        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
-        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
-        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
-        verify(mViewController).updateUI(anyList(), eq(0), anyString());
-    }
+//
+//    @Test
+//    public void testOnExperimentDataReady_givenExperimentName_PresenterShouldSetTheName() throws Exception {
+//        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
+//        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
+//        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
+//        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
+//        assertEquals(mPresenter.getCurrentExperimentName(), MockBuilder.getDefaultExpName());
+//
+//    }
+//
+//    @Test
+//    public void testOnExperimentDataReady_givenCurrentExpirment_PresenterShouldHaveCurrentExpirment() throws Exception {
+//        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
+//        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
+//        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
+//        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
+//        assertNotNull(mPresenter.getCurrentExperiment());
+//    }
+//
+//    @Test
+//    public void testOnExperimentDataReady_firstInitialization_selectionModeShouldBeAutomaticByDefault() throws Exception {
+//        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
+//        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
+//        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
+//        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
+//        assertFalse(mPresenter.isManualExpirment());
+//    }
+//
+//    @Test
+//    public void testOnExperimentDataReady_selectionModeAutomatic_shouldAskUIToMakeItAutomatic() throws Exception {
+//        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
+//        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
+//        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
+//        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
+//        verify(mViewController).updateSelectionMethod(eq(false), anyString());
+//    }
+//
+//    @Test
+//    public void testOnExperimentDataReady_selectedVarientAreFrist_shouldLocatePositionZeroOnTheSpinner() throws Exception {
+//        RocketBucket.initialize(mContext, "endpoint", "apiKey", null);
+//        BucketsActivity.BucketPJO defaultPjo = MockBuilder.getBucketPJO(null, null, true);
+//        mPresenter = new BucketDetailsPresenter(mContext, Injection.provideBucketsRepository(), defaultPjo, mViewController);
+//        mPresenter.onExperimentDataReady(MockBuilder.getAllExpirment());
+//        verify(mViewController).updateUI(anyList(), eq(0), anyString());
+//    }
 
 
     @org.junit.Test
@@ -98,5 +105,5 @@ public class BucketDetailsPresenterTest{
     @org.junit.Test
     public void testOnSaveClicked() throws Exception {
 
-    }*/
+    }
 }

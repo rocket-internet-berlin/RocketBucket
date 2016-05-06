@@ -1,1 +1,1 @@
-include ':rocketbucket'
+include ':rocketbucket' , ':RocketBucketSample'

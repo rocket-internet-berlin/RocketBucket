@@ -14,7 +14,7 @@ import de.rocketinternet.android.bucket.models.Bucket;
 /**
  * @author Sameh Gerges
  */
-public class RocketBucket implements BucketsContainer{
+public final class RocketBucket implements BucketsContainer {
 
     static final String TAG = RocketBucket.class.getSimpleName();
 
@@ -103,7 +103,7 @@ public class RocketBucket implements BucketsContainer{
     }
 
     @VisibleForTesting
-    public static void killTheBucket() {
+    protected static void killTheBucket() {
         sSelf = null;
     }
 
@@ -114,12 +114,13 @@ public class RocketBucket implements BucketsContainer{
         return sSelf;
     }
 
-    public static boolean isDebug() {
-        return sIsDebug;
+    @VisibleForTesting
+    protected static void setInstance(RocketBucket bucket) {
+        sSelf = bucket;
     }
 
-    public static void setIsDebug(boolean isDebug) {
-        RocketBucket.sIsDebug = isDebug;
+    public static boolean isDebug() {
+        return sIsDebug;
     }
 
     @Override
@@ -144,7 +145,7 @@ public class RocketBucket implements BucketsContainer{
     public static class Config {
         private String mEndpoint;
         private String mApiKey;
-
+        //TODO make it builder
         public Config(String apiKey, String endpoint) {
             this.mApiKey = apiKey;
             this.mEndpoint = endpoint;
