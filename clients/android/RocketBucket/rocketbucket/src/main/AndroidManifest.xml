@@ -8,11 +8,11 @@
         <activity
             android:name=".BucketsActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light" />
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".ui.BucketDetailsActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light" />
+            android:theme="@style/AppTheme" />
 
     </application>
 

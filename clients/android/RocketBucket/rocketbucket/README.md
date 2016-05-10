@@ -1,18 +1,25 @@
-# RocketBucket
 
-RocketBucket SDK is to let you split your app audiences into buckets base on arbitrary user_id
+# RocketBucket Android SDK
 
 ### Installation
 
 add to gradle file the following line to include the library 
 ```sh
- compile 'de.rocketinternet.android.bucket:1.2'
+compile 'de.rocketinternet:android.bucket:0.1'
 ```
+In your Application class, you need to initialize the instance by adding the following line:
 
-### Todos
+```
+ RocketBucket.initialize(this, "http://10.24.18.45:8080/split", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", callback, isDebugMode);
+``` 
+isDebugMode will decide to show debugging floating view to mannually test different buckets without updating server code and restart the application
 
- - complete this Readme.md
- - write more unit tests
- - any pull requests are welcomed
-  
+callback optional callback to get notified when result is retrieved if you interested to log somthing or sending analytics about... etc
+
+> Note: if you are using debug mode you have to initialize RocketBucket on Application class otherwise debugging handle view may not be shown on project activites 
+
+That's it, you now ready to go and Happy Bucketing! , for more example see Sample Project
+
+**pull requests are welcomed**
  
+   

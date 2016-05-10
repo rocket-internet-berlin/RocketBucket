@@ -1,6 +1,9 @@
 package de.rocketinternet.android.bucket;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -10,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rocketinternet.android.bucket.models.Bucket;
+import de.rocketinternet.android.bucket.ui.BucketDetailsActivity;
+import de.rocketinternet.android.bucket.ui.BucketTrackerUi;
 
 /**
  * @author Sameh Gerges
@@ -44,7 +49,7 @@ public final class RocketBucket implements BucketsContainer {
         if (mContainer != null) {
             Map<String, String> experiments = new HashMap<>();
             for (String experimentName : results.keySet()) {
-                experiments.put(experimentName, getVariantName(experimentName));
+                experiments.put(experimentName, getBucketName(experimentName));
             }
             mContainer.onExperimentDataReady(experiments);
         }
@@ -68,7 +73,16 @@ public final class RocketBucket implements BucketsContainer {
 
     public static void initialize(@NonNull Context context, @NonNull String endpoint, @NonNull String apiKey, @Nullable RocketBucketContainer container, boolean
             isDebug) {
-        if ((apiKey == null || apiKey.isEmpty()) || (endpoint == null || endpoint.isEmpty())) {
+
+        if (isDebug) {
+            if (!(context instanceof Application)) {
+                throw new IllegalArgumentException("Context has to be instance of Application! in debug version");
+            }
+            Application application = (Application) context;
+            injectDebugViewIntoLifecycle(application);
+        }
+
+        if ((apiKey.isEmpty()) || (endpoint.isEmpty())) {
             throw new IllegalStateException("endpoint and api key cannot be null! or empty");
         }
         if (sSelf == null) {
@@ -90,16 +104,58 @@ public final class RocketBucket implements BucketsContainer {
 
     }
 
+    private static void injectDebugViewIntoLifecycle(Application application) {
+        application.registerActivityLifecycleCallbacks(new  Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+                if (activity instanceof BucketsActivity || activity instanceof BucketDetailsActivity) {
+                    return;
+                }
+                BucketTrackerUi.inject(activity);
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+
+            }
+        });
+    }
+
     void updateLatestBuckets(final Context context) {
         bucketsProvider.loadBuckets(context, this);
     }
 
-    public static String getVariantName(@NonNull String experimentName) {
+    public static String getBucketName(@NonNull String experimentName) {
         return getInstance().getVariant(experimentName).getName();
     }
 
-    public String getVariantValue(@NonNull String experimentName, String key, String defaultValue) {
-        return getInstance().getVariant(experimentName).getValue(key, defaultValue);
+    public static String getExtraByName(@NonNull String experimentName, String key, String defaultValue) {
+        return getInstance().getVariant(experimentName).getExtraByName(key, defaultValue);
     }
 
     @VisibleForTesting
@@ -145,7 +201,7 @@ public final class RocketBucket implements BucketsContainer {
     public static class Config {
         private String mEndpoint;
         private String mApiKey;
-        //TODO make it builder
+
         public Config(String apiKey, String endpoint) {
             this.mApiKey = apiKey;
             this.mEndpoint = endpoint;

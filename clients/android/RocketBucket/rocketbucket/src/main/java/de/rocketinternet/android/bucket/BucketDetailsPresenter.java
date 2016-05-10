@@ -16,7 +16,7 @@ import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
 /**
  * Created by mohamed.elawadi on 19/04/16.
  */
-public class BucketDetailsPresenter implements BucketDetailsContract.UserActionsListener {
+ public final class BucketDetailsPresenter implements BucketDetailsContract.UserActionsListener {
     private final BucketDetailsContract.View mViewController;
     private final Context mContext;
 
@@ -50,14 +50,13 @@ public class BucketDetailsPresenter implements BucketDetailsContract.UserActions
 
         String experimentName = experiment.getName();
         boolean isManual = mBucketsProvider.isCustomBucketAvailable(experimentName);
-        mViewController.updateSelectionMethod(isManual, RocketBucket.getVariantName(experimentName));
+        mViewController.updateSelectionMethod(isManual, mBucketsProvider.getAutomaticVariant(experimentName));
         Map<String, Map<String, String>> variants = getAllVariants(experiment.getBuckets());//for spinner initialization
         List<String> bucketListAsString = getVariantsAsStrings(variants);
         //throw exception in case no experiment found
-        mViewController.updateUI(bucketListAsString, bucketListAsString.indexOf(RocketBucket.getVariantName(experimentName)), experimentName);
+        mViewController.updateUI(bucketListAsString, bucketListAsString.indexOf(RocketBucket.getBucketName(experimentName)), experimentName);
 
     }
-
 
 
     public List<String> getVariantsAsStrings(Map<String, Map<String, String>> variants) {
@@ -72,7 +71,7 @@ public class BucketDetailsPresenter implements BucketDetailsContract.UserActions
         if (mBucket.bucket == null) {
             throw new NullPointerException("experiment name cannot be null!");
         }
-        for (Bucket bucket: getCurrentExperiment().getBuckets()) {
+        for (Bucket bucket : getCurrentExperiment().getBuckets()) {
             if (bucket.getName().equals(variantName)) {
                 return bucket;
             }
@@ -102,12 +101,12 @@ public class BucketDetailsPresenter implements BucketDetailsContract.UserActions
     }
 
     @VisibleForTesting
-    public Experiment getCurrentExperiment() {
+    protected Experiment getCurrentExperiment() {
         return mBucket.experiment;
     }
 
     @VisibleForTesting
-    public boolean isManualExpirment() {
+    protected boolean isManualExpirment() {
         return mBucketsProvider.isCustomBucketAvailable(getCurrentExperimentName());
     }
 }

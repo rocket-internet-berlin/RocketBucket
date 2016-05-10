@@ -53,7 +53,7 @@ public class RocketBucketTest {
 
     @Test
     public void testGetVariant_withExistingExperiment_shouldReturnTheVariant() throws Exception {
-        assertEquals(MockBuilder.getDefaultBucketName(), RocketBucket.getVariantName(MockBuilder.getDefaultExpName()));
+        assertEquals(MockBuilder.getDefaultBucketName(), RocketBucket.getBucketName(MockBuilder.getDefaultExpName()));
     }
 
 
@@ -90,7 +90,7 @@ public class RocketBucketTest {
     @Test
     public void testGetVariant_whileExpirmentDoesntExist_shouldReturnTheDefaultVarient() throws Exception {
         RocketBucket.getInstance().updateLatestBuckets(mContext);
-        assertEquals(RocketBucket.getVariantName("SomeExperiment"), RocketBucket.VARIANT_NAME_DEFAULT);
+        assertEquals(RocketBucket.getBucketName("SomeExperiment"), RocketBucket.VARIANT_NAME_DEFAULT);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class RocketBucketTest {
     public void testGetVariantName_givingVarientInSameExperimentIsNotManullySellected_shouldReturnAutomatic() throws Exception {
         RocketBucket.initialize(mContext, DEFAULT_ENDPONT, DEFAULT_APIKEY, null);
         RocketBucket.getInstance().updateLatestBuckets(mContext);
-        assertEquals(MockBuilder.getDefaultExpName(), RocketBucket.getVariantName(MockBuilder.getDefaultExpName()));
+        assertEquals(MockBuilder.getDefaultExpName(), RocketBucket.getBucketName(MockBuilder.getDefaultExpName()));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class RocketBucketTest {
         RocketBucket.initialize(mContext, DEFAULT_ENDPONT, DEFAULT_APIKEY, null);
         RocketBucket.getInstance().updateLatestBuckets(mContext);
         RocketBucket.getInstance().setCustomBucket(mContext, MockBuilder.getDefaultExpName(), new BucketBase("CUSTOM_VARIENT_NAME", Collections.EMPTY_MAP));
-        assertEquals("CUSTOM_VARIENT_NAME", RocketBucket.getVariantName(MockBuilder.getDefaultExpName()));
+        assertEquals("CUSTOM_VARIENT_NAME", RocketBucket.getBucketName(MockBuilder.getDefaultExpName()));
     }
 
     @Test
