@@ -35,7 +35,7 @@ public final class RocketBucket implements BucketsContainer {
     @Nullable private final RocketBucketContainer mContainer;
 
 
-    RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
+   private RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
         CONFIG = new Config(apiKey, endpoint);
 
         this.bucketsProvider = bucketsProvider;
@@ -55,7 +55,7 @@ public final class RocketBucket implements BucketsContainer {
         }
     }
 
-    Bucket getBucket(@NonNull String experimentName) {
+   protected Bucket getBucket(@NonNull String experimentName) {
         return mExperimentMap.containsKey(experimentName) ? mExperimentMap.get(experimentName) : BUCKET_BASE_DEFAULT;
     }
 
@@ -67,10 +67,16 @@ public final class RocketBucket implements BucketsContainer {
         }
     }
 
-    public Map<String, Bucket> getCurrentExperiments() {
-        return mExperimentMap;
-    }
-
+    /**
+     * initialize RocketBucket which retrieve this device's buckets and make it available for future use. this is nessessary before using any of the functionality of
+     * RocketBucket otherwise it will throw an exception it is not initialized !
+     * @param context application context
+     * @param endpoint url which client can call, this provided by RocketBucket server side for more info @url https://github.com/rocket-internet-berlin/RocketBucket
+     * @param apiKey provided by RocketBucket server for more info https://github.com/rocket-internet-berlin/RocketBucket
+     * @param container (optional) call back to be notified when request successfully served by backend
+     * @param isDebug boolean value to indicate whither or not to show debugging view on different activities in order to mannually test different buckets while
+     *                running the app without server code change
+     */
     public static void initialize(@NonNull Context context, @NonNull String endpoint, @NonNull String apiKey, @Nullable RocketBucketContainer container, boolean
             isDebug) {
 
@@ -150,10 +156,22 @@ public final class RocketBucket implements BucketsContainer {
         bucketsProvider.loadBuckets(context, this);
     }
 
+    /**
+     * provide bucket assigned by server for current device to make discession or decide what to display/behaviour user should expect
+     * @param experimentName Experiment name which we want to inquiry it's bucket for. e.g: AwesomeTabExperiment
+     * @return bucket name in which server assign for this device e.g TabOld or TabAwesome
+     */
     public static String getBucketName(@NonNull String experimentName) {
         return getInstance().getBucket(experimentName).getName();
     }
 
+    /**
+     * get extra attributes stored in bucket, this handy when we we have specific value returned from server
+     * @param experimentName experiment name which this bucket are contained
+     * @param key name of extra value inside this bucket for example : buttonColor or buttonTitle
+     * @param defaultValue in case this bucket doesn't contains this key this value are returned, this is handy in case response still didn't retrieved for any reason.
+     * @return extra value in a form of String, then you have to parse it depend on expected value is
+     */
     public static String getExtraByName(@NonNull String experimentName, String key, String defaultValue) {
         return getInstance().getBucket(experimentName).getExtraByName(key, defaultValue);
     }
@@ -193,7 +211,7 @@ public final class RocketBucket implements BucketsContainer {
         mExperimentMap.put(experimentName, bucket);
     }
 
-    public BucketsProvider getBucketsProvider() {
+    protected BucketsProvider getBucketsProvider() {
         return bucketsProvider;
     }
 

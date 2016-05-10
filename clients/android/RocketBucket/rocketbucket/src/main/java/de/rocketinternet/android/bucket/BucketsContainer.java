@@ -9,7 +9,7 @@ import de.rocketinternet.android.bucket.models.Bucket;
 /**
  * @author Sameh Gerges
  */
-public interface BucketsContainer {
+interface BucketsContainer {
     void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error);
     void updateBucket(Context context, String experimentName, Bucket bucket);
 }
