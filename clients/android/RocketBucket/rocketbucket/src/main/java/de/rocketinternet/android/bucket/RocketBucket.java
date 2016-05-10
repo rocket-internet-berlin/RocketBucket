@@ -55,7 +55,7 @@ public final class RocketBucket implements BucketsContainer {
         }
     }
 
-    Bucket getVariant(@NonNull String experimentName) {
+    Bucket getBucket(@NonNull String experimentName) {
         return mExperimentMap.containsKey(experimentName) ? mExperimentMap.get(experimentName) : BUCKET_BASE_DEFAULT;
     }
 
@@ -151,11 +151,11 @@ public final class RocketBucket implements BucketsContainer {
     }
 
     public static String getBucketName(@NonNull String experimentName) {
-        return getInstance().getVariant(experimentName).getName();
+        return getInstance().getBucket(experimentName).getName();
     }
 
     public static String getExtraByName(@NonNull String experimentName, String key, String defaultValue) {
-        return getInstance().getVariant(experimentName).getExtraByName(key, defaultValue);
+        return getInstance().getBucket(experimentName).getExtraByName(key, defaultValue);
     }
 
     @VisibleForTesting

@@ -177,7 +177,7 @@ public class RocketBucketTest {
     @Test
     public void testExperimentsLoaded() {
         initialize();
-        assertEquals(RocketBucket.getInstance().getVariant(MockBuilder.getDefaultExpName()).getName(), MockBuilder.getDefaultBucketName());
+        assertEquals(RocketBucket.getInstance().getBucket(MockBuilder.getDefaultExpName()).getName(), MockBuilder.getDefaultBucketName());
     }*/
 
 }
