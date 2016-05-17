@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.graphics.PointF;
 import android.os.SystemClock;
 import android.support.v4.content.res.ResourcesCompat;
-import android.support.v4.view.ViewCompat;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -19,8 +18,7 @@ import de.rocketinternet.android.bucket.R;
  * Created by mohamed.elawadi on 12/04/16.
  */
 public class BucketTrackerUi {
-    public static void inject(Activity activity, final String url, final String apiKey) {
-        //TODO we can make url part of singleton Network or bucket instance to avoid passing url multiple times
+    public static void inject(Activity activity) {
         ViewGroup viewGroup = (ViewGroup) activity.getWindow().getDecorView();
 
         Display display = activity.getWindowManager().getDefaultDisplay();

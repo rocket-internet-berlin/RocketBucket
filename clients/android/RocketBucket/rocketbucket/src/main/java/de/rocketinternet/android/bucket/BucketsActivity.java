@@ -65,7 +65,7 @@ public class BucketsActivity extends AppCompatActivity implements BucketsAdapter
                 if (response != null) {
                     final List<BucketPJO> currentBucketList = new ArrayList<>();
                     for (Experiment experiment : response) {
-                        currentBucketList.add(new BucketPJO(experiment, mRocketBucket.getVariant(experiment.getName()),
+                        currentBucketList.add(new BucketPJO(experiment, mRocketBucket.getBucket(experiment.getName()),
                                 !mBucketsProvider.isCustomBucketAvailable(experiment.getName())));
                     }
 

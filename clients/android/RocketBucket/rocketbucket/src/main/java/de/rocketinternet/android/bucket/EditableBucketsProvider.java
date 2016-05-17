@@ -18,7 +18,7 @@ public class EditableBucketsProvider implements BucketsProvider, BucketsContaine
 
     private BucketsContainer container;
 
-    public EditableBucketsProvider(){
+    public EditableBucketsProvider() {
         this.mExperimentMap = new HashMap<>();
         this.mCustomExperimentMap = new HashMap<>();
     }
@@ -69,4 +69,7 @@ public class EditableBucketsProvider implements BucketsProvider, BucketsContaine
         return mCustomExperimentMap.containsKey(experimentName);
     }
 
+    public String getAutomaticVariant(String experiment) {
+        return mExperimentMap.get(experiment) != null ? mExperimentMap.get(experiment).getName() : RocketBucket.VARIANT_NAME_DEFAULT;
+    }
 }

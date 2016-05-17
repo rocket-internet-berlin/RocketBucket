@@ -57,7 +57,7 @@ public class Bucket implements Parcelable {
         return mName;
     }
 
-    public String getValue(String key, String defaultValue) {
+    public String getExtraByName(String key, String defaultValue) {
         return mData.containsKey(key) ? mData.get(key) : defaultValue;
     }
 
