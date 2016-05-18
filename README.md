@@ -4,9 +4,9 @@ Service and clients to split audiences into buckets based on an arbitrary "user_
 
  * Source code for the service is all under `./service`. Run `make build` to create the executable `./service/bin/bucket_server`. This takes one parameter: the path to a config file.
  * Source code for the Android client can be found in `./clients/android`. to use android client SDK just include the following in your gradle file 
- ```sh
+```
 compile 'de.rocketinternet:android.bucket:0.2'
-``` 
+```
 more details android instructions can be found at the bottom of the page.
 
 The service was built by [Rocket Internet](https://www.rocket-internet.com/). The Android client, many hours of development and early adoption provided by [LYKE](https://www.lyke.co.id/) ([who are awesome!!](https://lyke.workable.com/)).
@@ -207,8 +207,8 @@ All code is kept in `./service/src/`. From within `./service/`, you can run `mak
 
 ### Installation
 
-add to gradle file the following line to include the library 
-```sh
+Add to gradle file the following line to include the library 
+```
 compile 'de.rocketinternet:android.bucket:0.1'
 ```
 In your Application class, you need to initialize the instance by adding the following line:
@@ -223,12 +223,10 @@ In your Application class, you need to initialize the instance by adding the fol
 
 ```callback``` (optional) callback to get notified when result is retrieved if you interested to log somthing or sending analytics about... etc.
 
-```isDebugMode ```will decide to show debugging floating view in order to mannually test different buckets without updating server code and restart the application.
+```isDebugMode ```will decide to show debugging floating view in order to mannually test different buckets without updating server code nor restart android application.
 
 > Note: if you are using debug mode you have to initialize RocketBucket on Application class otherwise debugging handle view may not be shown on project activites 
 
 That's it, you now ready to go and Happy Bucketing! , for more example see Sample Project
 
 **pull requests are welcomed**
- 
-   
