@@ -3,11 +3,11 @@
 Service and clients to split audiences into buckets based on an arbitrary "user_id".
 
  * Source code for the service is all under `./service`. Run `make build` to create the executable `./service/bin/bucket_server`. This takes one parameter: the path to a config file.
- * Source code for the Android client can be found in `./clients/android`. to use android client SDK just include the following in your gradle file 
-```
-compile 'de.rocketinternet:android.bucket:0.2'
-```
-more details android instructions can be found at the bottom of the page.
+ * Source code for the Android client can be found in `./clients/android`. to use android client SDK just include the following in your gradle file ```
+compile 'de.rocketinternet:android.bucket:0.2'``` more details android instructions can be found at the bottom of this page.
+
+
+
 
 The service was built by [Rocket Internet](https://www.rocket-internet.com/). The Android client, many hours of development and early adoption provided by [LYKE](https://www.lyke.co.id/) ([who are awesome!!](https://lyke.workable.com/)).
 
@@ -230,3 +230,4 @@ In your Application class, you need to initialize the instance by adding the fol
 That's it, you now ready to go and Happy Bucketing! , for more example see Sample Project
 
 **pull requests are welcomed**
+ 
