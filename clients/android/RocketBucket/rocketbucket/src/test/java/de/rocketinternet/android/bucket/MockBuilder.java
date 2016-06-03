@@ -23,7 +23,7 @@ public final class MockBuilder {
     private static Bucket bucket = null;
 
     public static List<Experiment> getAllExpirment() {
-        Experiment experiment1 = buildExperiment(DFAULT_EXP_NAME, false, buildBuckets(buildBucket(DEFAULT_BUCKET_NAME, 50, null), buildBucket("experiment1bucket2", DEFAULT_PERCENTAGE,
+        Experiment experiment1 = buildExperiment(DFAULT_EXP_NAME, false, buildBuckets(getDefaultBucket(), buildBucket("experiment1bucket2", DEFAULT_PERCENTAGE,
                 null)));
         Experiment experiment2 = buildExperiment("expirment2", false, buildBuckets(buildBucket("expirment2bucket1", 50, null), buildBucket("expirment2bucket2", 50,
                 null)));
@@ -53,9 +53,8 @@ public final class MockBuilder {
     }
 
 
-    public static BucketsActivity.BucketPJO getBucketPJO(String name, String bucketName, boolean isAutomatic) {
-        //return new BucketsActivity.BucketPJO(name == null ? DFAULT_EXP_NAME : name, bucketName == null ? DEFAULT_BUCKET_NAME : bucketName, isAutomatic);
-        return null;
+    public static BucketsActivity.BucketPJO getBucketPJO(Experiment experiment, Bucket bucket, boolean isAutomatic) {
+        return new BucketsActivity.BucketPJO(experiment == null ? getAllExpirment().get(0) : experiment, bucket == null ? getDefaultBucket() : bucket, isAutomatic);
     }
 
     public static Map<String, Bucket> getMockedDefaultLatestBucket() {
@@ -76,7 +75,7 @@ public final class MockBuilder {
         if (bucket == null) {
             Map<String, String> extraMap = new HashMap<>();
             extraMap.put(COLOR_KEY, COLOR_VALUE);
-            bucket = new Bucket(DEFAULT_BUCKET_NAME,100,extraMap);
+            bucket = new Bucket(DEFAULT_BUCKET_NAME, 100, extraMap);
         }
         return bucket;
     }
