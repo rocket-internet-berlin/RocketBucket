@@ -35,7 +35,7 @@ public final class RocketBucket implements BucketsContainer {
     @Nullable private final RocketBucketContainer mContainer;
 
 
-   private RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
+   protected RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
         CONFIG = new Config(apiKey, endpoint);
 
         this.bucketsProvider = bucketsProvider;
@@ -183,7 +183,7 @@ public final class RocketBucket implements BucketsContainer {
 
     static RocketBucket getInstance() {
         if (sSelf == null) {
-            throw new IllegalStateException("Rocket BucketBase is not initialized, please make sure to call initialize function");
+            throw new IllegalStateException("Rocket Bucket is not initialized, please make sure to call initialize function");
         }
         return sSelf;
     }
