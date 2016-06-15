@@ -58,6 +58,7 @@ headers['X-Api-Key'] = api_key if api_key
 longest_bucket_name = 0
 
 (server_config["experiments"] || []).each do |experiment|
+  next unless experiment['enabled']
   experiments[experiment["name"]] ||= {expected: {}, got: {}, total: 0}
   
   experiment["buckets"].each do |bucket|
