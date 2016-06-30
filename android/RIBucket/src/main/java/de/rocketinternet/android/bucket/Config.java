@@ -99,7 +99,7 @@ public class Config {
         }
 
         public Config build() {
-            if (TextUtils.isEmpty(config.mApiKey) || TextUtils.isEmpty(config.mApiKey) ) {
+            if (TextUtils.isEmpty(config.mApiKey) || TextUtils.isEmpty(config.mEndpoint) ) {
                 throw new IllegalStateException("endpoint and api key cannot be null! or empty");
             }
 
