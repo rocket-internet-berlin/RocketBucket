@@ -9,8 +9,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +31,8 @@ public class JsonParser {
     private static final String JSON_ATT_DATA = "data";
     private static final String JSON_ATT_VALUE = "value";
 
-    public static Map<String, Bucket> parseExperiments(InputStream jsonStream) throws IOException {
-        return new JsonParser().parseUserExperiment(jsonStream);
+    public static Map<String, Bucket> parseExperiments(Reader jsonStreamReader) throws IOException {
+        return new JsonParser().parseUserExperiment(jsonStreamReader);
     }
 
     public static List<Experiment> parseAllExperiments(InputStream jsonStream) throws IOException, JSONException {
@@ -45,13 +44,14 @@ public class JsonParser {
      * <p/>
      * If JSON structure is getting more complicated, then it's recommend to switch to JSONObject and JSONArray
      *
-     * @param jsonStream
+     * @param jsonStreamReader
      * @throws IOException
      */
-    private Map<String, Bucket> parseUserExperiment(InputStream jsonStream) throws IOException {
+    private Map<String, Bucket> parseUserExperiment(Reader jsonStreamReader) throws IOException {
         Map<String, Bucket> experimentMap = new HashMap<>();
 
-        JsonReader reader = new JsonReader(new InputStreamReader(jsonStream, Charset.defaultCharset()));
+
+        JsonReader reader = new JsonReader(jsonStreamReader);
 
         reader.beginObject();
         while (reader.hasNext()) {

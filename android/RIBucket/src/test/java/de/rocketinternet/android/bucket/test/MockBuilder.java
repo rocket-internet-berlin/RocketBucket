@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket;
+package de.rocketinternet.android.bucket.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,15 +8,19 @@ import java.util.Map;
 
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.models.Experiment;
+import de.rocketinternet.android.bucket.ui.BucketsActivity;
 
 /**
  * Created by mohamed.elawadi on 21/04/16.
  */
 public final class MockBuilder {
 
+    private static final String DEFAULT_APIKEY = "298492849283932";
+    private static final String DEFAULT_ENDPONT = "http://bucket.com";
     private static final String DFAULT_EXP_NAME = "expirment1";
     private static final String DEFAULT_BUCKET_NAME = "experiment1bucket1";
     private static final int DEFAULT_PERCENTAGE = 50;
+
     public static final String COLOR_KEY = "color";
     public static final String COLOR_VALUE = "#FFFFF";
     public static final String COLOR_BUCKET_NAME = "COLOR_BUCKET";
@@ -78,5 +82,13 @@ public final class MockBuilder {
             bucket = new Bucket(DEFAULT_BUCKET_NAME, 100, extraMap);
         }
         return bucket;
+    }
+
+    public static String getApiKey(){
+        return DEFAULT_APIKEY;
+    }
+
+    public static String getEndpoint(){
+        return DEFAULT_ENDPONT;
     }
 }

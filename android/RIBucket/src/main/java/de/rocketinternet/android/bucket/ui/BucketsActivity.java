@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket;
+package de.rocketinternet.android.bucket.ui;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,14 +10,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.rocketinternet.android.bucket.R;
+import de.rocketinternet.android.bucket.core.EditableBucketsProvider;
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.models.Experiment;
-import de.rocketinternet.android.bucket.network.NetworkTask;
-import de.rocketinternet.android.bucket.ui.BucketDetailsActivity;
-import de.rocketinternet.android.bucket.ui.BucketsAdapter;
+import de.rocketinternet.android.bucket.network.BucketService;
 
 
 /**
@@ -26,9 +27,12 @@ import de.rocketinternet.android.bucket.ui.BucketsAdapter;
 public class BucketsActivity extends AppCompatActivity implements BucketsAdapter.OnItemClickListener {
     private static final String TAG = "BUCKETS ACTIVITY";
     private static final int VARIANT_REQUEST_CODE = 1;
-    private BucketsAdapter mAdapter;
-    private RocketBucket mRocketBucket;
-    private EditableBucketsProvider mBucketsProvider;
+    private BucketsAdapter adapter;
+
+    /**
+     * Attribute is inject just after onCreate being called
+     */
+    private EditableBucketsProvider bucketsProvider;
 
     public static Intent newIntent(Context context) {
         return new Intent(context, BucketsActivity.class);
@@ -37,18 +41,20 @@ public class BucketsActivity extends AppCompatActivity implements BucketsAdapter
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mRocketBucket = RocketBucket.getInstance();
-        mBucketsProvider = (EditableBucketsProvider) mRocketBucket.getBucketsProvider();
 
         setContentView(R.layout.activity_bucket_list);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        mAdapter = new BucketsAdapter(this);
+        adapter = new BucketsAdapter(this);
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.bucketsRecyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(mAdapter);
+        recyclerView.setAdapter(adapter);
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
         updateCurrentExperimentsAdapterData();
     }
 
@@ -58,28 +64,27 @@ public class BucketsActivity extends AppCompatActivity implements BucketsAdapter
     }
 
     private void updateCurrentExperimentsAdapterData() {
-        NetworkTask.getAllBuckets(this, RocketBucket.CONFIG.getEndpoint(), RocketBucket.CONFIG.getApiKey(), new NetworkTask.Callback<List<Experiment>>() {
+        bucketsProvider.getBucketService().getBuckets(new BucketService.Callback<List<Experiment>>() {
             @Override
-            public void onCompletion(List<Experiment> response, Throwable error) {
-
-                if (response != null) {
-                    final List<BucketPJO> currentBucketList = new ArrayList<>();
-                    for (Experiment experiment : response) {
-                        currentBucketList.add(new BucketPJO(experiment, mRocketBucket.getBucket(experiment.getName()),
-                                !mBucketsProvider.isCustomBucketAvailable(experiment.getName())));
-                    }
-
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mAdapter.setData(currentBucketList);
-                        }
-                    });
-
-                } else if (error != null) {
-                    //TODO:: Display error message with retry button !
+            public void onSuccess(List<Experiment> data, boolean fromCache) throws IOException {
+                final List<BucketPJO> currentBucketList = new ArrayList<>();
+                for (Experiment experiment : data) {
+                    currentBucketList.add(new BucketPJO(experiment, bucketsProvider.getBucket(experiment.getName()),
+                            !bucketsProvider.isCustomBucketAvailable(experiment.getName())));
                 }
+
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        adapter.setData(currentBucketList);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                //TODO:: Display error message with retry button !
             }
         });
     }
@@ -95,6 +100,10 @@ public class BucketsActivity extends AppCompatActivity implements BucketsAdapter
         if (resultCode == RESULT_OK) {
             updateCurrentExperimentsAdapterData();
         }
+    }
+
+    public void setBucketsProvider(EditableBucketsProvider bucketsProvider) {
+        this.bucketsProvider = bucketsProvider;
     }
 
     /**
@@ -151,6 +160,10 @@ public class BucketsActivity extends AppCompatActivity implements BucketsAdapter
             dest.writeParcelable(experiment, flags);
             dest.writeParcelable(bucket, flags);
             dest.writeByte((byte) (isAutomatic ? 1 : 0));
+        }
+
+        public Experiment getExperiment() {
+            return experiment;
         }
     }
 

@@ -15,13 +15,18 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.Collections;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.core.BucketsContainer;
+import de.rocketinternet.android.bucket.core.BucketsProvider;
+import de.rocketinternet.android.bucket.core.BucketsProviderImpl;
+import de.rocketinternet.android.bucket.core.Config;
+import de.rocketinternet.android.bucket.core.EditableBucketsProvider;
 import de.rocketinternet.android.bucket.models.Bucket;
+import de.rocketinternet.android.bucket.network.BucketService;
+import de.rocketinternet.android.bucket.test.MockBuilder;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -33,6 +38,7 @@ public class RocketBucketTest {
     private static final boolean DEBUG_ENABLED = true;
     @Mock Context mContext;
     @Mock Application mApplication;
+    @Mock BucketService bucketService;
     @Captor
     private ArgumentCaptor<RocketBucketContainer> mContainerCaptor;
     private static final String DEFAULT_APIKEY = "298492849283932";
@@ -45,16 +51,23 @@ public class RocketBucketTest {
 
     RocketBucket mRocketBucket;
 
+    private Config getDefaultConfig(){
+        return new Config.Builder()
+                .apiKey(DEFAULT_APIKEY)
+                .endpoint(DEFAULT_ENDPONT)
+                .debugMode(true)
+                .build();
+    }
     @Before
     public void initialize() {
         BucketsProvider mockData = new BucketsProvider() {
             @Override
-            public void loadBuckets(Context context, BucketsContainer container) {
-                container.onBucketsRetrieved(context, MockBuilder.getMockedDefaultLatestBucket(), null);
+            public void loadBuckets(Context context, Config config, BucketsContainer container) {
+                container.onBucketsRetrieved(context, MockBuilder.getMockedDefaultLatestBucket(), null, BucketsContainer.SOURCE_INTERNAL_CACHE);
             }
         };
-        mRocketBucket = new RocketBucket(DEFAULT_ENDPONT, DEFAULT_APIKEY, mockData, null);
-        mRocketBucket.updateLatestBuckets(mContext);
+        mRocketBucket = new RocketBucket(mContext, getDefaultConfig(), mockData, null);
+        mockData.loadBuckets(mContext, getDefaultConfig(), mRocketBucket);
         RocketBucket.setInstance(mRocketBucket);//for setting provider manually !
         mResultCallbackThrowable = null;
         mResultCallbackExpirment = null;
@@ -74,42 +87,8 @@ public class RocketBucketTest {
 
     @Test()
     public void initialize_WithValidUrlAndAPIKey_ShouldnotThrowException() {
-        RocketBucket.initialize(mContext, DEFAULT_ENDPONT, DEFAULT_APIKEY, null, false);
+        RocketBucket.initialize(mContext, getDefaultConfig(), null);
         assertNotNull(RocketBucket.getInstance());
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void initialize_withNullEndpoint_ShouldThrowException()
-    {
-        RocketBucket.killTheBucket();
-        RocketBucket.initialize(mApplication, "", DEFAULT_APIKEY, null, DEBUG_ENABLED);
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void initialize_withNullAPIKey_ShouldThrowException() {
-        RocketBucket.killTheBucket();
-        RocketBucket.initialize(mApplication, DEFAULT_ENDPONT, "", null, DEBUG_ENABLED);
-
-    }
-
-    @Test
-    public void testIsDebug_initializeWithDebugFalse_shouldReturnFalse() throws Exception {
-        RocketBucket.killTheBucket();
-        RocketBucket.initialize(mContext, DEFAULT_ENDPONT, DEFAULT_APIKEY, null, false);
-        assertFalse(RocketBucket.isDebug());
-    }
-
-    @Test
-    public void testIsDebug_initializeWithDebugTrue_shouldReturnTrue() throws Exception {
-        RocketBucket.initialize(mApplication, DEFAULT_ENDPONT, DEFAULT_APIKEY, null, true);
-        assertTrue(RocketBucket.isDebug());
-    }
-
-
-    @Test
-    public void testGetVariant_whileExpirmentDoesntExist_shouldReturnTheDefaultVarient() throws Exception {
-        RocketBucket.getInstance().updateLatestBuckets(mContext);
-        assertEquals(RocketBucket.getBucketName("SomeExperiment"), RocketBucket.VARIANT_NAME_DEFAULT);
     }
 
     @Test
@@ -127,14 +106,6 @@ public class RocketBucketTest {
 
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testUpdateLatestBuckets_withoutInitialization_shouldThrowException() throws Exception {
-        RocketBucket.killTheBucket();
-        RocketBucket.getInstance().updateLatestBuckets(mContext);
-    }
-
-
-
     @Test
     public void testGetBucketName_givingVarientInSameExperimentIsNotManullySellected_shouldReturnAutomaticBucket() throws Exception {
         assertEquals(MockBuilder.getDefaultBucketName(), RocketBucket.getBucketName(MockBuilder.getDefaultExpName()));
@@ -149,15 +120,15 @@ public class RocketBucketTest {
     @Test
     public void testGetBucketsProvider_onDebugingEnabled_shouldReturnDebuggingProvoider() {
         RocketBucket.killTheBucket();//to simulate what happening in first initialize
-        RocketBucket.initialize(mApplication, DEFAULT_ENDPONT, DEFAULT_APIKEY, null, DEBUG_ENABLED);
+        RocketBucket.initialize(mApplication, getDefaultConfig(), null);
         assertThat(RocketBucket.getInstance().getBucketsProvider(), instanceOf(EditableBucketsProvider.class));
     }
 
     @Test
     public void testGetBucketsProvider_onDebugingDisabled_shouldReturnDefaultProvoider() {
         RocketBucket.killTheBucket();//to simulate what happening in first initialize
-        RocketBucket.initialize(mApplication, DEFAULT_ENDPONT, DEFAULT_APIKEY, null, !DEBUG_ENABLED);
-        assertThat(RocketBucket.getInstance().getBucketsProvider(), instanceOf(BucketProviderImpl.class));
+        RocketBucket.initialize(mApplication, getDefaultConfig(), null);
+        assertThat(RocketBucket.getInstance().getBucketsProvider(), instanceOf(BucketsProviderImpl.class));
     }
 
     /*
@@ -188,13 +159,13 @@ public class RocketBucketTest {
         RocketBucket.killTheBucket();
         BucketsProvider mockData = new BucketsProvider() {
             @Override
-            public void loadBuckets(Context context, BucketsContainer container) {
-                container.onBucketsRetrieved(context, MockBuilder.getMockedDefaultLatestBucket(), null);
+            public void loadBuckets(Context context, Config config, BucketsContainer container) {
+                container.onBucketsRetrieved(context, MockBuilder.getMockedDefaultLatestBucket(), null, BucketsContainer.SOURCE_INTERNAL_CACHE);
             }
         };
 
         mResultCallbackExpirment = null;
-        mRocketBucket = new RocketBucket(DEFAULT_ENDPONT, DEFAULT_APIKEY, mockData, new RocketBucketContainer() {
+        mRocketBucket = new RocketBucket(mContext, getDefaultConfig(), mockData, new RocketBucketContainer() {
             @Override
             public void onUnexpectedError(Throwable t) {
 
@@ -206,7 +177,7 @@ public class RocketBucketTest {
             }
         });
         RocketBucket.setInstance(mRocketBucket);//for setting provider manually !
-        mRocketBucket.updateLatestBuckets(mContext);
+        mockData.loadBuckets(mContext, getDefaultConfig(), mRocketBucket);
         assertNotNull(mResultCallbackExpirment);
         assertEquals(1, mResultCallbackExpirment.size());
         assertEquals(mResultCallbackExpirment.get(MockBuilder.getDefaultExpName()), MockBuilder.getDefaultBucket().getName());
@@ -217,13 +188,13 @@ public class RocketBucketTest {
         RocketBucket.killTheBucket();
         BucketsProvider mockData = new BucketsProvider() {
             @Override
-            public void loadBuckets(Context context, BucketsContainer container) {
+            public void loadBuckets(Context context, Config config, BucketsContainer container) {
 
-                container.onBucketsRetrieved(context, null, new Exception());
+                container.onBucketsRetrieved(context, null, new Exception(), BucketsContainer.SOURCE_INTERNAL_CACHE);
             }
         };
 
-        mRocketBucket = new RocketBucket(DEFAULT_ENDPONT, DEFAULT_APIKEY, mockData, new RocketBucketContainer() {
+        mRocketBucket = new RocketBucket(mContext, getDefaultConfig(), mockData, new RocketBucketContainer() {
             @Override
             public void onUnexpectedError(Throwable t) {
                 mResultCallbackThrowable = t;
@@ -235,7 +206,7 @@ public class RocketBucketTest {
             }
         });
         RocketBucket.setInstance(mRocketBucket);//for setting provider manually !
-        mRocketBucket.updateLatestBuckets(mContext);
+        mockData.loadBuckets(mContext, getDefaultConfig(), mRocketBucket);
         assertNotNull(mResultCallbackThrowable);
         assertNull(mResultCallbackExpirment);
     }
@@ -245,13 +216,13 @@ public class RocketBucketTest {
         RocketBucket.killTheBucket();
         BucketsProvider mockData = new BucketsProvider() {
             @Override
-            public void loadBuckets(Context context, BucketsContainer container) {
-                container.onBucketsRetrieved(context, Collections.EMPTY_MAP, null);
+            public void loadBuckets(Context context, Config config, BucketsContainer container) {
+                container.onBucketsRetrieved(context, Collections.EMPTY_MAP, null, BucketsContainer.SOURCE_INTERNAL_CACHE);
             }
         };
 
         mResultCallbackExpirment = null;
-        mRocketBucket = new RocketBucket(DEFAULT_ENDPONT, DEFAULT_APIKEY, mockData, new RocketBucketContainer() {
+        mRocketBucket = new RocketBucket(mContext, getDefaultConfig(), mockData, new RocketBucketContainer() {
             @Override
             public void onUnexpectedError(Throwable t) {
 
@@ -263,7 +234,7 @@ public class RocketBucketTest {
             }
         });
         RocketBucket.setInstance(mRocketBucket);//for setting provider manually !
-        mRocketBucket.updateLatestBuckets(mContext);
+        mockData.loadBuckets(mContext, getDefaultConfig(), mRocketBucket);
         assertNotNull(mResultCallbackExpirment);
         assertEquals(0, mResultCallbackExpirment.size());
     }

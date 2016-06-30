@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket;
+package de.rocketinternet.android.bucket.ui;
 
 import android.content.Context;
 import android.support.annotation.VisibleForTesting;
@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.core.EditableBucketsProvider;
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.models.Experiment;
-import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
 
 
 /**
@@ -20,18 +20,14 @@ import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
     private final BucketDetailsContract.View mViewController;
     private final Context mContext;
 
-
     final BucketsActivity.BucketPJO mBucket;
-    final RocketBucket mRocketBucket;
     final EditableBucketsProvider mBucketsProvider;
 
-
-    public BucketDetailsPresenter(Context context, BucketsActivity.BucketPJO bucketPJO, BucketDetailsContract.View viewController) {
+    public BucketDetailsPresenter(Context context, BucketsActivity.BucketPJO bucketPJO, BucketDetailsContract.View viewController, EditableBucketsProvider bucketsProvider) {
         //add check if intent doesn't contain target variables throw exception if not
         this.mViewController = viewController;
         this.mBucket = bucketPJO;
-        this.mRocketBucket = RocketBucket.getInstance();
-        this.mBucketsProvider = (EditableBucketsProvider) this.mRocketBucket.getBucketsProvider();
+        this.mBucketsProvider = bucketsProvider;
         this.mContext = context;
 
         onExperimentDataReady();
@@ -41,9 +37,8 @@ import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
         return mBucket.getExperimentName();
     }
 
-
     public void onExperimentDataReady() {
-        Experiment experiment = mBucket.experiment;
+        Experiment experiment = mBucket.getExperiment();
         if (experiment == null) {
             throw new RuntimeException("Current experiment not found!, all experiments doesn't contain current experiment! API inconsistent!");
         }
@@ -54,8 +49,8 @@ import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
         Map<String, Map<String, String>> variants = getAllVariants(experiment.getBuckets());//for spinner initialization
         List<String> bucketListAsString = getVariantsAsStrings(variants);
         //throw exception in case no experiment found
-        mViewController.updateUI(bucketListAsString, bucketListAsString.indexOf(RocketBucket.getBucketName(experimentName)), experimentName);
 
+        mViewController.updateUI(bucketListAsString, bucketListAsString.indexOf(mBucketsProvider.getBucket(experimentName).getName()), experimentName);
     }
 
 
@@ -102,7 +97,7 @@ import de.rocketinternet.android.bucket.ui.BucketDetailsContract;
 
     @VisibleForTesting
     protected Experiment getCurrentExperiment() {
-        return mBucket.experiment;
+        return mBucket.getExperiment();
     }
 
     @VisibleForTesting

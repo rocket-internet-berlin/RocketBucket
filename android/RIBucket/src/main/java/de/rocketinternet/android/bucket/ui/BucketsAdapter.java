@@ -8,8 +8,6 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.rocketinternet.android.bucket.BucketsActivity;
-
 /**
  * Created by mohamed.elawadi on 12/04/16.
  */

@@ -12,32 +12,40 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.core.BucketsContainer;
+import de.rocketinternet.android.bucket.core.BucketsProvider;
+import de.rocketinternet.android.bucket.core.BucketsProviderImpl;
+import de.rocketinternet.android.bucket.core.Config;
+import de.rocketinternet.android.bucket.core.EditableBucketsProvider;
 import de.rocketinternet.android.bucket.models.Bucket;
+import de.rocketinternet.android.bucket.network.BucketService;
 import de.rocketinternet.android.bucket.ui.BucketDetailsActivity;
 import de.rocketinternet.android.bucket.ui.BucketTrackerUi;
+import de.rocketinternet.android.bucket.ui.BucketsActivity;
 
 /**
  * @author Sameh Gerges
  */
-public final class RocketBucket implements BucketsContainer {
+public class RocketBucket implements BucketsContainer {
 
-    static final String TAG = RocketBucket.class.getSimpleName();
+    public static final String TAG = RocketBucket.class.getSimpleName();
 
-    private static boolean sIsDebug;
-    public static Config CONFIG;
+
     public static final String VARIANT_NAME_DEFAULT = "default_variant";
     private static final Bucket BUCKET_BASE_DEFAULT = new Bucket(VARIANT_NAME_DEFAULT);
+
 
     private static RocketBucket sSelf;
 
     private final Map<String, Bucket> mExperimentMap = new HashMap<>();
     private final BucketsProvider bucketsProvider;
+    private final Config config;
+
     @Nullable private final RocketBucketContainer mContainer;
 
 
-   protected RocketBucket(@NonNull String endpoint, @NonNull String apiKey, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
-        CONFIG = new Config(apiKey, endpoint);
-
+    protected RocketBucket(@NonNull Context context, @NonNull Config config, @NonNull BucketsProvider bucketsProvider, @Nullable RocketBucketContainer container) {
+        this.config = config;
         this.bucketsProvider = bucketsProvider;
         this.mContainer = container;
     }
@@ -45,21 +53,27 @@ public final class RocketBucket implements BucketsContainer {
     private void updateExperimentList(Map<String, Bucket> results) {
         mExperimentMap.clear();
         mExperimentMap.putAll(results);
+    }
 
-        if (mContainer != null) {
-            Map<String, String> experiments = new HashMap<>();
-            for (String experimentName : results.keySet()) {
-                experiments.put(experimentName, getBucketName(experimentName));
-            }
-            mContainer.onExperimentDataReady(experiments);
+    private void notifyContainer(){
+        if (mContainer != null && mExperimentMap.size() > 0) {
+            mContainer.onExperimentDataReady(getActiveExperiments());
         }
     }
 
-   protected Bucket getBucket(@NonNull String experimentName) {
+    public Map<String, String> getActiveExperiments(){
+        Map<String, String> experiments = new HashMap<>();
+        for (String experimentName : mExperimentMap.keySet()) {
+            experiments.put(experimentName, getBucketName(experimentName));
+        }
+        return  experiments;
+    }
+
+    Bucket getBucket(@NonNull String experimentName) {
         return mExperimentMap.containsKey(experimentName) ? mExperimentMap.get(experimentName) : BUCKET_BASE_DEFAULT;
     }
 
-    void onUnexpectedError(Throwable t) {
+    public void onUnexpectedError(Throwable t) {
         Log.w(TAG, t.getMessage(), t);
 
         if (mContainer != null) {
@@ -67,54 +81,54 @@ public final class RocketBucket implements BucketsContainer {
         }
     }
 
+    public static void onError(Throwable t){
+        getInstance().onUnexpectedError(t);
+    }
     /**
      * initialize RocketBucket which retrieve this device's buckets and make it available for future use. this is nessessary before using any of the functionality of
      * RocketBucket otherwise it will throw an exception it is not initialized !
      * @param context application context
-     * @param endpoint url which client can call, this provided by RocketBucket server side for more info @url https://github.com/rocket-internet-berlin/RocketBucket
-     * @param apiKey provided by RocketBucket server for more info https://github.com/rocket-internet-berlin/RocketBucket
+     * @param config configuration object that control library behavior for more details check {@link Config}
      * @param container (optional) call back to be notified when request successfully served by backend
-     * @param isDebug boolean value to indicate whither or not to show debugging view on different activities in order to mannually test different buckets while
-     *                running the app without server code change
      */
-    public static void initialize(@NonNull Context context, @NonNull String endpoint, @NonNull String apiKey, @Nullable RocketBucketContainer container, boolean
-            isDebug) {
+    public static void initialize(@NonNull Context context, @NonNull Config config, @Nullable RocketBucketContainer container) {
 
-        if (isDebug) {
-            if (!(context instanceof Application)) {
-                throw new IllegalArgumentException("Context has to be instance of Application! in debug version");
-            }
-            Application application = (Application) context;
-            injectDebugViewIntoLifecycle(application);
+        if (config.isDebug() && !(context instanceof Application)) {
+            throw new IllegalArgumentException("Context has to be instance of Application! in debug version");
         }
 
-        if ((apiKey.isEmpty()) || (endpoint.isEmpty())) {
-            throw new IllegalStateException("endpoint and api key cannot be null! or empty");
-        }
         if (sSelf == null) {
-            RocketBucket.sIsDebug = isDebug;
+            BucketService bucketService = BucketService.initialize(context, config);
             BucketsProvider bucketsProvider;
-            if (isDebug) {
-                bucketsProvider = new EditableBucketsProvider();
+            if (config.isDebug()) {
+                EditableBucketsProvider editableBucketsProvider = new EditableBucketsProvider(bucketService);
+                Application application = (Application) context;
+                injectDebugViewIntoLifecycle(application, editableBucketsProvider);
+                bucketsProvider = editableBucketsProvider;
             } else {
-                bucketsProvider = new BucketProviderImpl();
+                bucketsProvider = new BucketsProviderImpl(bucketService);
             }
+
             synchronized (RocketBucket.class) {
                 if (sSelf == null) {
-                    sSelf = new RocketBucket(endpoint, apiKey, bucketsProvider, container);
+                    sSelf = new RocketBucket(context, config, bucketsProvider, container);
                 }
             }
+
+            bucketsProvider.loadBuckets(context, config, sSelf);
         }
-        sSelf.updateLatestBuckets(context);
-
-
     }
 
-    private static void injectDebugViewIntoLifecycle(Application application) {
+    private static void injectDebugViewIntoLifecycle(Application application, final EditableBucketsProvider bucketsProvider) {
+
         application.registerActivityLifecycleCallbacks(new  Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                if (activity instanceof BucketsActivity || activity instanceof BucketDetailsActivity) {
+                if (activity instanceof BucketsActivity) {
+                    ((BucketsActivity) activity).setBucketsProvider(bucketsProvider);
+                    return;
+                } else if (activity instanceof BucketDetailsActivity) {
+                    ((BucketDetailsActivity) activity).setBucketsProvider(bucketsProvider);
                     return;
                 }
                 BucketTrackerUi.inject(activity);
@@ -152,10 +166,6 @@ public final class RocketBucket implements BucketsContainer {
         });
     }
 
-    void updateLatestBuckets(final Context context) {
-        bucketsProvider.loadBuckets(context, this);
-    }
-
     /**
      * provide bucket assigned by server for current device to make discession or decide what to display/behaviour user should expect
      * @param experimentName Experiment name which we want to inquiry it's bucket for. e.g: AwesomeTabExperiment
@@ -176,6 +186,10 @@ public final class RocketBucket implements BucketsContainer {
         return getInstance().getBucket(experimentName).getExtraByName(key, defaultValue);
     }
 
+    public static Map<String, String> getExperiments(){
+        return getInstance().getActiveExperiments();
+    }
+
     @VisibleForTesting
     protected static void killTheBucket() {
         sSelf = null;
@@ -189,20 +203,24 @@ public final class RocketBucket implements BucketsContainer {
     }
 
     @VisibleForTesting
-    protected static void setInstance(RocketBucket bucket) {
+    static void setInstance(RocketBucket bucket) {
         sSelf = bucket;
     }
 
-    public static boolean isDebug() {
-        return sIsDebug;
-    }
-
     @Override
-    public void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error) {
+    public void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error, @BucketsSource int source) {
         if (buckets != null) {
             updateExperimentList(buckets);
         } else if (error != null) {
             onUnexpectedError(error);
+        }
+
+        if (source != SOURCE_INTERNAL_CACHE) {
+            /**
+             * Notifying container will happen only trail to update cached data is done.
+             * So in case of failure due to network error, container will be notified even if cached data is expired
+             */
+            notifyContainer();
         }
     }
 
@@ -211,26 +229,8 @@ public final class RocketBucket implements BucketsContainer {
         mExperimentMap.put(experimentName, bucket);
     }
 
-    protected BucketsProvider getBucketsProvider() {
+    BucketsProvider getBucketsProvider() {
         return bucketsProvider;
     }
 
-
-    public static class Config {
-        private String mEndpoint;
-        private String mApiKey;
-
-        public Config(String apiKey, String endpoint) {
-            this.mApiKey = apiKey;
-            this.mEndpoint = endpoint;
-        }
-
-        public String getApiKey() {
-            return mApiKey;
-        }
-
-        public String getEndpoint() {
-            return mEndpoint;
-        }
-    }
 }

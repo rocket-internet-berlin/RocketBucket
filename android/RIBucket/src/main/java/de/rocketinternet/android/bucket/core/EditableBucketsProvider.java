@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket;
+package de.rocketinternet.android.bucket.core;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -6,7 +6,9 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.models.Bucket;
+import de.rocketinternet.android.bucket.network.BucketService;
 
 /**
  * @author Sameh Gerges
@@ -17,20 +19,22 @@ public class EditableBucketsProvider implements BucketsProvider, BucketsContaine
     private Map<String, Bucket> mCustomExperimentMap;
 
     private BucketsContainer container;
+    final private BucketService bucketService;
 
-    public EditableBucketsProvider() {
+    public EditableBucketsProvider(BucketService bucketService) {
+        this.bucketService = bucketService;
         this.mExperimentMap = new HashMap<>();
         this.mCustomExperimentMap = new HashMap<>();
     }
 
     @Override
-    public void loadBuckets(Context context, BucketsContainer container) {
+    public void loadBuckets(Context context, Config config, BucketsContainer container) {
         this.container = container;
-        new BucketProviderImpl().loadBuckets(context, this);
+        new BucketsProviderImpl(bucketService).loadBuckets(context, config, this);
     }
 
     @Override
-    public void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error) {
+    public void onBucketsRetrieved(Context context, Map<String, Bucket> buckets, Throwable error, @BucketsSource int source) {
 
         if (buckets != null) {
             mExperimentMap.clear();
@@ -49,7 +53,7 @@ public class EditableBucketsProvider implements BucketsProvider, BucketsContaine
                 }
             }
         }
-        this.container.onBucketsRetrieved(context, buckets, error);
+        this.container.onBucketsRetrieved(context, buckets, error, source);
     }
 
     @Override
@@ -71,5 +75,13 @@ public class EditableBucketsProvider implements BucketsProvider, BucketsContaine
 
     public String getAutomaticVariant(String experiment) {
         return mExperimentMap.get(experiment) != null ? mExperimentMap.get(experiment).getName() : RocketBucket.VARIANT_NAME_DEFAULT;
+    }
+
+    public BucketService getBucketService() {
+        return bucketService;
+    }
+
+    public Bucket getBucket(@NonNull String experimentName) {
+        return  mExperimentMap.get(experimentName);
     }
 }
