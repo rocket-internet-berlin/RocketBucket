@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.network.BucketService;

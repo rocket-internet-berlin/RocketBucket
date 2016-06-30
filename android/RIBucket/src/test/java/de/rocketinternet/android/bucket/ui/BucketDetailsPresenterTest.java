@@ -19,7 +19,7 @@ import java.util.Map;
 
 import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.RocketBucketContainer;
-import de.rocketinternet.android.bucket.core.Config;
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.core.EditableBucketsProvider;
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.network.BucketService;

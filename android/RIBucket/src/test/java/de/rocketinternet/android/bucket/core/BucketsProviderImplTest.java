@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.StringBufferInputStream;
 import java.nio.charset.Charset;
 
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.models.Bucket;
 import de.rocketinternet.android.bucket.network.BucketService;

@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket.core;
+package de.rocketinternet.android.bucket;
 
 import android.content.Context;
 import android.text.TextUtils;

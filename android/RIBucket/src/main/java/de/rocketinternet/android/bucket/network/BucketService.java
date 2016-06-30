@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import de.rocketinternet.android.bucket.core.Config;
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.models.Experiment;
 import okhttp3.Cache;

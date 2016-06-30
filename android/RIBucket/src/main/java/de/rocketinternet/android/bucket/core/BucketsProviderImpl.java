@@ -17,6 +17,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.network.BucketService;
 import de.rocketinternet.android.bucket.network.JsonParser;
 

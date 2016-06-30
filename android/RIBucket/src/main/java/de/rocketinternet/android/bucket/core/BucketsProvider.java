@@ -2,6 +2,8 @@ package de.rocketinternet.android.bucket.core;
 
 import android.content.Context;
 
+import de.rocketinternet.android.bucket.Config;
+
 /**
  * @author Sameh Gerges
  */
