@@ -1,4 +1,4 @@
-package de.rocketinternet.android.bucket;
+package de.rocketinternet.android.bucket.core;
 
 import android.content.Context;
 import android.content.SharedPreferences;

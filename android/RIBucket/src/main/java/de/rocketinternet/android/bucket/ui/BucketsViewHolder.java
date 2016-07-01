@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import de.rocketinternet.android.bucket.BucketsActivity;
 import de.rocketinternet.android.bucket.R;
 
 /**
