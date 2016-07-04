@@ -2,6 +2,9 @@ package bucket.android.rocketinternet.de.rocketbucketsample;
 
 import android.app.Application;
 
+import java.util.concurrent.TimeUnit;
+
+import de.rocketinternet.android.bucket.Config;
 import de.rocketinternet.android.bucket.RocketBucket;
 import de.rocketinternet.android.bucket.RocketBucketContainer;
 
@@ -31,7 +34,12 @@ public class App extends Application {
          * (optional) call back to be notified when request successfully served by backend
          */
         RocketBucketContainer callback = null;
-
-        RocketBucket.initialize(this, endpoint, apiKey, callback, isDebug);
+        Config config = new Config.Builder()
+                            .apiKey(apiKey)
+                                .endpoint(endpoint)
+                             .blockAppTillExperimentsLoaded(2, TimeUnit.SECONDS)
+                              .debugMode(isDebug)
+                              .build();
+        RocketBucket.initialize(this, config, callback);
     }
 }
