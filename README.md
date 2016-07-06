@@ -220,6 +220,7 @@ In your Application class, you need to initialize the instance by adding the fol
                      ``        .blockAppTillExperimentsLoaded(2, TimeUnit.SECONDS)``
                ``               .debugMode(isDebug)``
                    ``           .build();``
+                   
 >> ``  RocketBucket.initialize(this, config, callback);``
 
 ``endpoint()`` the endpoint URL provided by server (see server instructions for more) 
