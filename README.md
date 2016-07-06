@@ -214,14 +214,14 @@ compile 'de.rocketinternet:android.bucket:0.3'
 In your Application class, you need to initialize the instance by adding the following line:
 
 
->>`` Config config = new Config.Builder()``  
+ `` Config config = new Config.Builder()``  
  ``                         .apiKey(apiKey)``
      ``                          .endpoint(endpoint)``
                      ``        .blockAppTillExperimentsLoaded(2, TimeUnit.SECONDS)``
                ``               .debugMode(isDebug)``
                    ``           .build();``
                    
->> ``  RocketBucket.initialize(this, config, callback);``
+  ``  RocketBucket.initialize(this, config, callback);``
 
 ``endpoint()`` the endpoint URL provided by server (see server instructions for more) 
 
