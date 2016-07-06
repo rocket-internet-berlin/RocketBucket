@@ -224,7 +224,7 @@ In your Application class, you need to initialize the instance by adding the fol
 
 ``endpoint()`` the endpoint URL provided by server (see server instructions for more) 
 
-``blockAppTillExperimentsLoaded`` optional delay before proceeding in case you really want to load experiment before proceeding
+``blockAppTillExperimentsLoaded()`` optional delay before proceeding in case you really want to load experiment before proceeding
 
 ``apiKey()`` is the API_KEY provided by server  (see server instructions for more) 
 
