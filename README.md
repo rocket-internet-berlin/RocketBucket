@@ -209,21 +209,28 @@ All code is kept in `./service/src/`. From within `./service/`, you can run `mak
 
 Add to gradle file the following line to include the library 
 ```
-compile 'de.rocketinternet:android.bucket:0.1'
+compile 'de.rocketinternet:android.bucket:0.3'
 ```
 In your Application class, you need to initialize the instance by adding the following line:
 
-```
- RocketBucket.initialize(this, "http://10.24.18.45:8080/split", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", callback, isDebugMode);
-``` 
 
-``"http://10.24.18.45:8080/split"`` the endpoint URL provided by server (see server instructions for more) 
+>>`` Config config = new Config.Builder()``  
+ ``                         .apiKey(apiKey)``
+     ``                          .endpoint(endpoint)``
+                     ``        .blockAppTillExperimentsLoaded(2, TimeUnit.SECONDS)``
+               ``               .debugMode(isDebug)``
+                   ``           .build();``
+>> ``  RocketBucket.initialize(this, config, callback);``
 
-``"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"`` is the API_KEY provided by server  (see server instructions for more) 
+``endpoint()`` the endpoint URL provided by server (see server instructions for more) 
+
+``blockAppTillExperimentsLoaded()`` optional delay before proceeding in case you really want to load experiment before proceeding
+
+``apiKey()`` is the API_KEY provided by server  (see server instructions for more) 
 
 ```callback``` (optional) callback to get notified when result is retrieved if you interested to log somthing or sending analytics about... etc.
 
-```isDebugMode ```will decide to show debugging floating view in order to mannually test different buckets without updating server code nor restart android application.
+```debugMode() ```will decide to show debugging floating view in order to mannually test different buckets without updating server code nor restart android application.
 
 > Note: if you are using debug mode you have to initialize RocketBucket on Application class otherwise debugging handle view may not be shown on project activites 
 
