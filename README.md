@@ -225,14 +225,13 @@ In your Application class, you need to initialize the instance by adding the fol
 
 ``endpoint()`` the endpoint URL provided by server (see server instructions for more) 
 
-``blockAppTillExperimentsLoaded()`` optional delay before proceeding in case you really want to load experiment before proceeding
-
 ``apiKey()`` is the API_KEY provided by server  (see server instructions for more) 
 
-```callback``` (optional) callback to get notified when result is retrieved if you interested to log somthing or sending analytics about... etc.
+``blockAppTillExperimentsLoaded()`` optional delay before proceeding in case you really want to load experiment before proceeding
 
 ```debugMode() ```will decide to show debugging floating view in order to mannually test different buckets without updating server code nor restart android application.
 
+```callback``` (optional) callback to get notified when result is retrieved if you interested to log somthing or sending analytics about... etc.
 > Note: if you are using debug mode you have to initialize RocketBucket on Application class otherwise debugging handle view may not be shown on project activites 
 
 That's it, you now ready to go and Happy Bucketing! , for more example see Sample Project
