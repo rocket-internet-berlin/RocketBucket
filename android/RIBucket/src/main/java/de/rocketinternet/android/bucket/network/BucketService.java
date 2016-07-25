@@ -95,9 +95,10 @@ public class BucketService {
 
     public InputStream getBuckets(String deviceId, long timeout) throws IOException {
         OkHttpClient tempHttpClient = httpClient.newBuilder()
-            .readTimeout(timeout, TimeUnit.SECONDS)
-            .writeTimeout(timeout, TimeUnit.SECONDS)
-            .connectTimeout(timeout, TimeUnit.SECONDS)
+            .readTimeout(timeout, TimeUnit.MILLISECONDS)
+            .writeTimeout(timeout, TimeUnit.MILLISECONDS)
+            .connectTimeout(timeout, TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(false)
             .build();
 
         Request request = createRequestBuilder()
