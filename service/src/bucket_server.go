@@ -57,6 +57,9 @@ func main() {
 	loadConfig()
 	setupSIGHUPHandler()
 
-	server = rocket_bucket.Server{Config: config, Selector: selector}
+	metrics := rocket_bucket.GetMetrics(config.Experiments)
+	rocket_bucket.RegisterMetrics(metrics)
+
+	server = rocket_bucket.Server{Config: config, Selector: selector, Metrics: metrics}
 	server.Run()
 }

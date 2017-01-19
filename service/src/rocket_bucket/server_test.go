@@ -47,7 +47,9 @@ func buildRequest(header http.Header) (Server, *httptest.ResponseRecorder, *http
 
 	selector := Selector{Experiments: &config.Experiments}
 
-	server := Server{Config: &config, Selector: &selector}
+	m := GetMetrics(config.Experiments)
+
+	server := Server{Config: &config, Selector: &selector, Metrics: m}
 
 	response := httptest.NewRecorder()
 	request := &http.Request{
