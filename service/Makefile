@@ -9,6 +9,7 @@ export GOPATH
 default: build
 
 build:
+	go get github.com/prometheus/client_golang/prometheus ; \
 	go build -v -o ${PWD}/bin/bucket_server ./src/bucket_server.go
 
 fmt:
